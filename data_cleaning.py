@@ -1,9 +1,28 @@
+import os
+import sys
 import csv
 import pandas as pd
 
-raw_data = pd.read_csv("raw_uncleaned.csv")
-raw_data.columns = ["ID", "sex", "country", "sleep", "suite_pref", "cleanliness", "alcohol", "siblings", "sibs_sameRC", "gender_pref"]
+# Get path of raw data, defaulting to raw_uncleaned.csv if left blank.
+if len(sys.argv) == 1: # no arg provided, defaulting
+    raw_path = "data/raw_uncleaned.csv"
+else:
+    if len(sys.argv) >= 3: # too many args, warn + take first argument
+        print("Too many arguments. Taking the first arguement as path.")
+    raw_path = sys.argv[1]
+print("Extracting raw data from {}.".format(raw_path))
 
+# Import data
+try:
+    raw_data = pd.read_csv(raw_path)
+    raw_data.columns = ["ID", "sex", "country", "sleep",
+                        "suite_pref", "cleanliness", "alcohol",
+                        "siblings", "sibs_sameRC", "gender_pref"]
+except Exception as inst:
+    print("ERROR: {} does not exist. Please try again.".format(raw_path))
+    exit(1)
+
+# Cleaning dictionaries
 sleep_dict ={"Before 10 PM" : 1,
              "10PM to 12AM" : 2,
              "12AM to 2AM" : 3,
@@ -22,9 +41,16 @@ cleanliness_dict = {"Cleanliness is a top priority, and every member of the suit
 sibs_clean = {"Yes" : "Yes",
               "No (Proceed to Question 6)" : "No"}
 
+# Clean data
 raw_data["sleep"] = raw_data["sleep"].map(sleep_dict)
 raw_data["suite_pref"] = raw_data["suite_pref"].map(suite_dict)
 raw_data["cleanliness"] = raw_data["cleanliness"].map(cleanliness_dict)
 raw_data["siblings"] = raw_data["siblings"].map(sibs_clean)
-print(raw_data.tail())
 
+# Export data
+PATH_TO_CLEANED = os.getcwd() + "/cleaned"
+try: # Safety check to ensure that data folder exists, and makes it otherwise.
+    os.mkdir(PATH_TO_CLEANED)
+except FileExistsError:
+    pass
+raw_data.to_csv(PATH_TO_CLEANED + "/" + raw_path)
