@@ -1,3 +1,37 @@
+"""First Year Allocation
+
+This script allows the user to allocate first-year students to suites according to preferences.
+
+This script accepts the student data in a .csv file, which must be processed such that it has the following columns:
+    * matric
+    * sex
+    * country
+    * sleep_pref (values must be numeric e.g. 1 - 4)
+    * suite_pref (values must be numeric e.g. 1 - 4)
+    * cleanliness_pref (values must be numeric e.g. 1 - 4)
+    * alcohol_pref (values must be Yes or No)
+    * gender_pref
+
+It is recommended that the .csv file be processed using data_cleaning.py which is packaged together with this script.
+It is also recommended that a virtual environment be set up, and packages installed using requirements.txt
+
+This file contains the following classes:
+    * Student
+    * Suite
+    * SuiteAllocation
+
+This file contains the following functions:
+    * calculate_score - Takes in a suite and an optional student and returns a score that indicates how good a fit
+        the students in the suite + the new student are for each other. A lower score is better.
+    * add_students - Parses data from the student dataframe and returns a list of Student objects
+    * main - The main function of the script that allocates suites, taking data from a .csv file
+
+TODO: Can we try to automate the part where we define the preferences or at least make it dynamic?
+    Because the questions may differ year by year.
+TODO: Refactor gale-shapley
+TODO: Check correctness of code (.copy()?)
+"""
+
 import random
 import enum
 import math
@@ -17,8 +51,43 @@ class Citizenship(enum.Enum):
 
 
 class Student:
+    """Contains information about a student's demographic and preferences
+
+    The class also contains information necessary for the suite allocation, such as the ranking and scores.
+
+    TODO: It might be better to create another class that is used just for the allocation (e.g. StudentMatchee)
+
+    Attributes:
+        matric
+        sex
+        country
+        school
+        gender_pref
+        sleep_pref: An integer
+        suite_pref: An integer
+        cleanliness_pref: An integer
+        alcohol_pref: An integer
+        citizenship: An enumeration of Citizenship (either LOCAL or INTERNATIONAL)
+        suite: A suite object
+        scores: A dictionary mapping suite objects to the score given to that suite combined with the student
+        ranking: A list that contains suite objects. The order represents the student's preference
+    """
+    
     def __init__(self, matric, sex, country, school, gender_pref,
                  sleep_pref, suite_pref, cleanliness_pref, alcohol_pref):
+        """Initialises a student object.
+
+        Args:
+            matric
+            sex
+            country
+            school
+            gender_pref
+            sleep_pref: An integer
+            suite_pref: An integer
+            cleanliness_pref: An integer
+            alcohol_pref: An integer
+        """
         self.matric = matric
         self.sex = sex
         self.country = country
@@ -43,11 +112,24 @@ class Student:
         return self.matric
 
     def full_information(self):
+        """Returns a string containing detailed information about a student.
+
+        Use this to print information about a student, when the string representation of the object is not sufficient.
+        """
         attributes = str([self.suite, self.sex, self.country, self.school, self.gender_pref,
                           self.sleep_pref, self.suite_pref, self.cleanliness_pref, self.alcohol_pref])
         return f"{self.matric}: {attributes}"
 
     def generate_score(self, suite):
+        """Returns a score that indicates how good of a fit a suite is for the student.
+
+        This score is identical for the suite. Therefore, if the score has already been calculated
+
+        Stores the score in a dictionary so that the suite object does not need to
+
+        Args:
+            suite: A suite object.
+        """
         if suite in self.scores:
             return self.scores[suite]
         else:
@@ -163,11 +245,20 @@ def calculate_score(suite, student):
     if len(schools) != len(set(schools)):  # Check for duplicate schools
         return math.inf
     sleep_prefs = np.std([student.sleep_pref for student in students]) / 2
-    suite_prefs = np.std([student.suite_pref for student in students]) / 1.5
+    suite_prefs = np.std([student.suite_pref for student in students]) / 2
     cleanliness_prefs = np.std([student.cleanliness_pref for student in students]) / 1.5
     alcohol_prefs = np.std([student.alcohol_pref for student in students]) / 0.5
     score = 0.2 * sleep_prefs + 0.4 * suite_prefs + 0.2 * cleanliness_prefs + 0.2 * alcohol_prefs
     return score
+
+
+def pairwise_root_diff(given_list):
+    length = len(given_list)
+    sum_of_diffs = sum(math.sqrt(abs(item - given_list[i]))
+                       for n, item in enumerate(given_list)
+                       for i in range(n + 1, length))
+    average = sum_of_diffs / math.comb(length, 2)
+    return average
 
 
 class SuiteAllocation:
@@ -214,6 +305,12 @@ class SuiteAllocation:
             suite.add_student(student)
 
     def allocate_remaining_batches(self):
+        """
+
+
+        TODO: Can refactor this to calculating the scores for every suite-student pairing first.
+            Then, generate the ranking for both students and suites.
+        """
         for i in range(5):
             students = self.batches.pop(0)
             for student in students:
@@ -224,7 +321,7 @@ class SuiteAllocation:
 
     def gale_shapley(self, students):
         # Student propose
-        unallocated_students = students
+        unallocated_students = students.copy()
         while unallocated_students:
             student = unallocated_students.pop(0)
             suite = student.ranking.pop(0)
@@ -286,7 +383,7 @@ def add_students(students_data):
             "matric": students_data.ID[i],
             "sex": students_data.sex[i],
             "country": students_data.country[i],
-            "school": school,
+            "school": school,  # TODO: Incorporate actual schools from the data
             "sleep_pref": students_data.sleep[i],
             "suite_pref": students_data.suite_pref[i],
             "cleanliness_pref": students_data.cleanliness[i],
@@ -310,7 +407,7 @@ def main():
     for i in range(math.ceil(len(students)/6)):
         suites.append(Suite(i, 6))
     allocations = {}
-    for i in range(100):
+    for i in range(20):
         suite_allocation = SuiteAllocation(students, suites)
         suite_allocation.match()
         global_score = suite_allocation.global_score()
