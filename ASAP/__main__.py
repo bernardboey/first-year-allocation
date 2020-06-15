@@ -168,7 +168,7 @@ def allocate_suites(students, name):
         "Alcohol Prefs Similarity": [scoring.alcohol_pref_score(suite.students) for suite in allocated_suites],
     }
     suites_df = pd.DataFrame(suites_data, columns=list(suites_data.keys()))
-    suites_df.to_csv(f"output/{name}.csv", index=False)
+    suites_df.to_csv(f"data/{name}.csv", index=False)
 
 
 if __name__ == "__main__":
