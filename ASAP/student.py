@@ -1,3 +1,10 @@
+"""This module provides the StudentData class.
+
+    Typical usage example:
+
+    new_student = StudentData(...)
+"""
+
 import enum
 
 
@@ -6,42 +13,32 @@ class Citizenship(enum.Enum):
     LOCAL = "Local"
 
 
+class Sex(enum.Enum):
+    FEMALE = "F"
+    MALE = "M"
+
+
 class StudentData:
     """Contains information about a student's demographic and preferences
 
     Attributes:
-        matric
-        sex
-        country
-        school
-        gender_pref
-        sleep_pref: An integer
-        suite_pref: An integer
-        cleanliness_pref: An integer
-        alcohol_pref: An integer
-        citizenship: An enumeration of Citizenship (either LOCAL or INTERNATIONAL)
-        suite: A suite object
-        scores: A dictionary mapping suite objects to the score given to that suite combined with the student
-        ranking: A list that contains suite objects. The order represents the student's preference
+        matric: A string representing the student's Matric/ID
+        sex: A Sex enumeration representing the student's sex (either M or F)
+        country: A string representing the student's country
+        school: A string representing the student's school
+        gender_pref: A string representing the student's gender preference
+        sleep_pref: An integer representing the student's sleep preference
+        suite_pref: An integer representing the student's suite preference
+        cleanliness_pref: An integer representing the student's cleanliness preference
+        alcohol_pref: An integer representing the student's alcohol preference
+        citizenship: An Citizenship enumeration representing whether a student is LOCAL or INTERNATIONAL
     """
 
-    def __init__(self, matric, sex, country, school, gender_pref,
+    def __init__(self, *, matric, sex, country, school, gender_pref,
                  sleep_pref, suite_pref, cleanliness_pref, alcohol_pref):
-        """Initialises a student object.
-
-        Args:
-            matric
-            sex
-            country
-            school
-            gender_pref
-            sleep_pref: An integer
-            suite_pref: An integer
-            cleanliness_pref: An integer
-            alcohol_pref: An integer
-        """
+        """Initialises a StudentData object"""
         self.matric = matric
-        self.sex = sex
+        self.sex = Sex(sex)
         self.country = country
         self.school = school
         self.gender_pref = gender_pref
@@ -53,9 +50,6 @@ class StudentData:
             self.citizenship = Citizenship.LOCAL
         else:
             self.citizenship = Citizenship.INTERNATIONAL
-        self.suite = None
-        self.scores = {}
-        self.ranking = []
 
     def __repr__(self):
         return self.matric
@@ -68,6 +62,6 @@ class StudentData:
 
         Use this to print information about a student, when the string representation of the object is not sufficient.
         """
-        attributes = str([self.suite, self.sex, self.country, self.school, self.gender_pref,
+        attributes = str([self.sex, self.country, self.citizenship, self.school, self.gender_pref,
                           self.sleep_pref, self.suite_pref, self.cleanliness_pref, self.alcohol_pref])
         return f"{self.matric}: {attributes}"
