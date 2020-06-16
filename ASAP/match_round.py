@@ -5,6 +5,10 @@ from ASAP import scoring
 
 class Match:
     class StudentMatchee:
+        """
+            scores: A dictionary mapping suite objects to the score given to that suite combined with the student
+            ranking: A list that contains suite objects. The order represents the student's preference
+        """
         def __init__(self, student_data):
             self.data = student_data
             self.scores = {}
@@ -59,7 +63,7 @@ class Match:
 
     def __init__(self, students, suites, suite_propose=True):
         """
-        Initialises GaleShapley object
+        Initialises Match object
 
         Args:
             proposer_rankings: A dict mapping proposers to their ranking of acceptors.
