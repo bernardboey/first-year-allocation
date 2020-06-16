@@ -54,15 +54,18 @@ cleanliness_dict = {"Cleanliness is a top priority, and every member of the suit
                "I don't prioritize cleanliness, unless it is getting out of hand." : 3,
                "As long as there exists a path from the door to our rooms, and there is space to sit in the common area, we're good." : 4}
 
-sibs_clean = {"Yes" : "Yes",
+sibs_dict = {"Yes" : "Yes",
               "No (Proceed to Question 6)" : "No"}
+
+yes_no_dict = {"Yes" : 1, "No" : 0}
 
 # Clean data
 raw_data["sex"] = [s[0] for s in raw_data["sex"]]
 raw_data["sleep"] = raw_data["sleep"].map(sleep_dict)
 raw_data["suite_pref"] = raw_data["suite_pref"].map(suite_dict)
 raw_data["cleanliness"] = raw_data["cleanliness"].map(cleanliness_dict)
-raw_data["siblings"] = raw_data["siblings"].map(sibs_clean)
+raw_data["siblings"] = raw_data["siblings"].map(sibs_dict)
+raw_data["alcohol"] = raw_data["alcohol"].map(yes_no_dict)
 
 # Export data
 PATH_TO_CLEANED = os.getcwd() + "/cleaned"
