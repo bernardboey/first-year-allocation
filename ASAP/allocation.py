@@ -1,5 +1,6 @@
 import math
 import random
+import itertools
 
 import numpy as np
 
@@ -30,7 +31,7 @@ class SuiteAllocation:
             return str(self.suite_num)
 
     def __init__(self, students):
-        self.students = students
+        self.students = students.copy()
         self.student_results = []
         self.total_students = len(students)
         self.batch_size = math.ceil(self.total_students/6)
@@ -81,8 +82,15 @@ class SuiteAllocation:
     def global_score(self):
         scores = []
         for suite in self.suites:
-            scores.append(scoring.calculate_score(suite, student=None))
+            # scores.append(scoring.calculate_score(suite, student=None))
+            scores.append(scoring.calculate_success(suite.students))
         return np.mean(scores)
 
     def get_allocation(self):
         return self.suites.copy()
+
+    def allocate_randomly(self):
+        suites_cycle = itertools.cycle(self.suites)
+        for student in self.students:
+            suite = next(suites_cycle)
+            suite.add_student(student)

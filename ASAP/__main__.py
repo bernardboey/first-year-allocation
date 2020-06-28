@@ -34,7 +34,6 @@ TODO: Check correctness of code (.copy()?)
 
 import sys
 
-import pandas as pd
 import numpy as np
 
 from ASAP import scoring
@@ -49,24 +48,35 @@ def main():
     csv_path = sys.argv[1]
     female_students, male_students = parser.parse_student_data(csv_path)
     allocate_suites(female_students, "females")
+    allocate_randomly(female_students, "females")
     allocate_suites(male_students, "males")
+    allocate_randomly(male_students, "males")
 
 
 def allocate_suites(students, name):
     allocations = {}
-    for i in range(20):
+    for i in range(100):
         suite_allocation = SuiteAllocation(students)
         suite_allocation.match()
         global_score = suite_allocation.global_score()
         allocated_suites = suite_allocation.get_allocation()
         print(f"Global score: {global_score}")
         allocations[global_score] = allocated_suites
-    allocated_suites = allocations[min(allocations)]
+    allocated_suites = allocations[max(allocations)]
     scores = []
     for suite in allocated_suites:
         scores.append(scoring.calculate_score(suite, student=None))
-    print(f"\nFinal score: {np.mean(scores)}")
+    print(f"\nFinal score: {np.mean(scores)}\n")
     parser.generate_temp_results(allocated_suites, f"data/{name}.csv")
+
+
+def allocate_randomly(students, name):
+    suite_allocation = SuiteAllocation(students)
+    suite_allocation.allocate_randomly()
+    global_score = suite_allocation.global_score()
+    allocated_suites = suite_allocation.get_allocation()
+    print(f"\nRandom allocation score: {global_score}\n")
+    parser.generate_temp_results(allocated_suites, f"data/{name}_random.csv")
 
 
 if __name__ == "__main__":
