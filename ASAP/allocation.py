@@ -4,7 +4,7 @@ import itertools
 
 import numpy as np
 
-from ASAP import match_round, scoring
+from ASAP import match, scoring
 from ASAP.student import Citizenship
 
 
@@ -15,6 +15,7 @@ class SuiteAllocation:
             self._capacity = capacity
             self.vacancies = capacity
             self.students = []
+            self.rc = None
 
         @property
         def capacity(self):
@@ -64,7 +65,7 @@ class SuiteAllocation:
 
     def allocate_first_batch(self):
         students = self.batches.pop(0)
-        student_results = match_round.Match.first_round(students, self.suites)
+        student_results = match.SuiteRound.first_round(students, self.suites)
         self.student_results.extend(student_results)
 
     def allocate_remaining_batches(self, suite_propose=True):
@@ -76,7 +77,7 @@ class SuiteAllocation:
         """
         for i in range(5):
             students = self.batches.pop(0)
-            student_results = match_round.Match(students, self.suites, suite_propose).run_match()
+            student_results = match.SuiteRound(students, self.suites, suite_propose).run_match()
             self.student_results.extend(student_results)
 
     def global_score(self):
