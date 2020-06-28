@@ -15,6 +15,9 @@ class Match:
             self.ranking = None
             self.current_choice = None
 
+        def __getattr__(self, attr):
+            return getattr(self.data, attr)
+
         @property
         def suite(self):
             return self.current_choice
@@ -27,7 +30,7 @@ class Match:
             Stores the score in a dictionary so that the suite object does not need to
 
             Args:
-                suite: A SuiteMatchee object.
+                suite_matchee: A SuiteMatchee object.
             """
             if suite_matchee in self.scores:
                 return self.scores[suite_matchee]
@@ -46,6 +49,9 @@ class Match:
             self.ranking = None
             self.current_choice = None
 
+        def __getattr__(self, attr):
+            return getattr(self.suite, attr)
+
         def add_student(self, student):
             if student:
                 self.suite.add_student(student)
@@ -62,17 +68,6 @@ class Match:
             self.ranking = collections.deque(sorted(students, key=self.generate_score))
 
     def __init__(self, students, suites, suite_propose=True):
-        """
-        Initialises Match object
-
-        Args:
-            proposer_rankings: A dict mapping proposers to their ranking of acceptors.
-                               The proposers must consist of unique objects
-                               The rankings must consist of unique acceptor objects
-            acceptor_rankings: A dict mapping acceptors to their ranking of proposers
-                               The acceptors must consist of unique objects
-                               The rankings must consist of unique proposer objects
-        """
         self.students = [Match.StudentMatchee(student) for student in students]
         self.suites = [Match.SuiteMatchee(suite) for suite in suites if suite.vacancies > 0]
         self.suite_propose = suite_propose
