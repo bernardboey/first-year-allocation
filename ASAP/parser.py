@@ -7,12 +7,15 @@
 
 import pandas as pd
 import numpy as np
+import datetime
 
 from ASAP.student import StudentData
 from ASAP import scoring
+import ASAP.util as util
 
 # A dictionary mapping variable names to the corresponding column names, for the demographic columns.
 # Change this if the headers of the CSV are different.
+
 DEMOGRAPHIC_COLUMNS = {
     # [variable name]: [column name]
     "matric": "ID",
@@ -79,7 +82,7 @@ def validate_student_data(students_df):
             extra_columns.append(column)
     if extra_columns:
         # Reminds user that extra columns will not be used and verifies that user wants to continue
-        proceed = input_yes_no(f"The following extra column(s) will not be used: {', '.join(extra_columns)}.\n"
+        proceed = util.input_yes_no(f"The following extra column(s) will not be used: {', '.join(extra_columns)}.\n"
                                f"Do you want to continue?")
         if not proceed:  # User indicates that extra columns should be used.
             print("Okay, please edit the code to incorporate the extra column(s).")
@@ -165,31 +168,22 @@ def generate_temp_results(suites, csv_path):
     suites_df.to_csv(csv_path, index=False)
 
 
-def input_yes_no(message, /, *, full_message=None, true_input=("y", "Y"), false_input=('n', "N"),
-                 try_again_text="Oops! Please enter 'y' or 'n': "):
-    """Gets a boolean user input (typically 'y' or 'n').
-
-    Repeats the prompt until a valid input is received.
-
-    Args:
-        message: (positional-only) A string representing the message shown to the user when asking for input.
-            This will be appended by the following string: "\nEnter 'y' or 'n': "
-        full_message: (optional, keyword-only) A string representing the full message shown to the user
-            when asking for input.
-        true_input: (optional, keyword-only) A tuple/list of strings that are allowed as the true/"yes" input.
-        false_input: (optional, keyword-only) A tuple/list of strings that are allowed as the false/"no" input.
-        try_again_text: (optional, keyword-only) The text to be shown to the user after failed input.
-
-    Returns:
-        A boolean indicating whether the user indicated yes or no.
-    """
-    if full_message:
-        response = input(full_message)
-    else:
-        response = input(message + "\nEnter 'y' or 'n': ")
-    while True:
-        if response in true_input:
-            return True
-        elif response in false_input:
-            return False
-        response = input(try_again_text)
+def generate_masterlist(suites, csv_path):
+    CURRENT_YEAR = datetime.datetime.now().year
+    students = [student for suite in suites for student in suite.students]
+    num_students = len(students)
+    students_data = {
+        "Suite": [student.current_choice.suite_num for student in students],
+        "Room": ["TBC" for student in students],
+        "RC": [student.current_choice.rc for student in students],
+        "Matric": [student.matric for student in students],
+        "Gender": [student.sex.value for student in students],
+        "Admit": [CURRENT_YEAR] * num_students,
+        "Class": [CURRENT_YEAR + 4] * num_students,
+        "Student Type": ["First-Year"] * num_students,
+        "Citizenship Country": [student.country for student in students],
+        "Unofficial Residency": [student.citizenship.value for student in students],
+        "Gender Preference": [student.gender_pref for student in students]
+    }
+    students_df = pd.DataFrame(students_data, columns=list(students_data.keys()))
+    students_df.to_csv(csv_path, index=False)

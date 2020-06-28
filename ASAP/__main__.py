@@ -47,10 +47,11 @@ def main():
         return
     csv_path = sys.argv[1]
     female_students, male_students = parser.parse_student_data(csv_path)
-    allocate_suites(female_students, "females")
+    female_suites = allocate_suites(female_students, "females")
     allocate_randomly(female_students, "females")
-    allocate_suites(male_students, "males")
+    male_suites = allocate_suites(male_students, "males")
     allocate_randomly(male_students, "males")
+    parser.generate_masterlist(female_suites + male_suites, f"data/masterlist.csv")
 
 
 def allocate_suites(students, name):
@@ -68,6 +69,7 @@ def allocate_suites(students, name):
         scores.append(scoring.calculate_score(suite, student=None))
     print(f"\nFinal score: {np.mean(scores)}\n")
     parser.generate_temp_results(allocated_suites, f"data/{name}.csv")
+    return allocated_suites
 
 
 def allocate_randomly(students, name):

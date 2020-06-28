@@ -3,7 +3,7 @@ import collections
 from ASAP import scoring
 
 
-class Match:
+class SuiteRound:
     class StudentMatchee:
         """
             scores: A dictionary mapping suite objects to the score given to that suite combined with the student
@@ -68,15 +68,15 @@ class Match:
             self.ranking = collections.deque(sorted(students, key=self.generate_score))
 
     def __init__(self, students, suites, suite_propose=True):
-        self.students = [Match.StudentMatchee(student) for student in students]
-        self.suites = [Match.SuiteMatchee(suite) for suite in suites if suite.vacancies > 0]
+        self.students = [SuiteRound.StudentMatchee(student) for student in students]
+        self.suites = [SuiteRound.SuiteMatchee(suite) for suite in suites if suite.vacancies > 0]
         self.suite_propose = suite_propose
         self.proposers = None
 
     @staticmethod
     def first_round(batch, suites):
-        students = [Match.StudentMatchee(student) for student in batch]
-        suites = [Match.SuiteMatchee(suite) for suite in suites if suite.vacancies > 0]
+        students = [SuiteRound.StudentMatchee(student) for student in batch]
+        suites = [SuiteRound.SuiteMatchee(suite) for suite in suites if suite.vacancies > 0]
         for i, student in enumerate(students):
             suite = suites[i]
             student.current_choice = suite
@@ -92,30 +92,39 @@ class Match:
             self.proposers = self.suites
         else:
             self.proposers = self.students
-        self.gale_shapley()
+        gale_shapley(self.proposers)
         for suite in self.suites:
             suite.add_student(suite.current_choice)
         return self.students
 
-    def gale_shapley(self):
-        def unmatch(old_proposer, current_acceptor):
-            old_proposer.current_choice = None
-            unallocated.append(old_proposer)
-            current_acceptor.current_choice = None
 
-        def match(current_proposer, current_acceptor):
-            current_acceptor.current_choice = current_proposer
-            current_proposer.current_choice = current_acceptor
+class RCAMatch:
+    def __init__(self, female_suites, male_suites, female_suites_propose=True):
+        #self.students = [SuiteRound.StudentMatchee(student) for student in students]
+        #self.suites = [SuiteRound.SuiteMatchee(suite) for suite in suites if suite.vacancies > 0]
+        self.suite_propose = female_suites_propose
+        self.proposers = None
 
-        unallocated = collections.deque(self.proposers)
-        while unallocated:
-            proposer = unallocated.popleft()
-            if proposer.ranking:
-                acceptor = proposer.ranking.popleft()
-                if acceptor.current_choice is None:
-                    match(proposer, acceptor)
-                elif acceptor.ranking.index(proposer) < acceptor.ranking.index(acceptor.current_choice):
-                    unmatch(acceptor.current_choice, acceptor)
-                    match(proposer, acceptor)
-                else:
-                    unallocated.append(proposer)
+
+def gale_shapley(proposers):
+    def unmatch(old_proposer, current_acceptor):
+        old_proposer.current_choice = None
+        unallocated.append(old_proposer)
+        current_acceptor.current_choice = None
+
+    def match(current_proposer, current_acceptor):
+        current_acceptor.current_choice = current_proposer
+        current_proposer.current_choice = current_acceptor
+
+    unallocated = collections.deque(proposers)
+    while unallocated:
+        proposer = unallocated.popleft()
+        if proposer.ranking:
+            acceptor = proposer.ranking.popleft()
+            if acceptor.current_choice is None:
+                match(proposer, acceptor)
+            elif acceptor.ranking.index(proposer) < acceptor.ranking.index(acceptor.current_choice):
+                unmatch(acceptor.current_choice, acceptor)
+                match(proposer, acceptor)
+            else:
+                unallocated.append(proposer)
