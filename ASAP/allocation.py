@@ -16,6 +16,7 @@ class SuiteAllocation:
             self.vacancies = capacity
             self.students = []
             self.rc = None
+            self.rca = None
 
         @property
         def capacity(self):
@@ -31,12 +32,12 @@ class SuiteAllocation:
         def __str__(self):
             return str(self.suite_num)
 
-    def __init__(self, students):
+    def __init__(self, students, name):
         self.students = students.copy()
         self.student_results = []
         self.total_students = len(students)
         self.batch_size = math.ceil(self.total_students/6)
-        self.suites = [SuiteAllocation.SuiteData(f"FY Suite {i:02d}", 6) for i in range(self.batch_size)]
+        self.suites = [SuiteAllocation.SuiteData(f"FY {name} Suite {i:02d}", 6) for i in range(1, self.batch_size + 1)]
         self.batches = self.split_into_batches()
 
     @staticmethod

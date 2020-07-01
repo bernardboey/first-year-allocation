@@ -28,11 +28,11 @@ print("Extracting raw data from {}.".format(raw_path))
 
 # Import data
 try:
-    raw_data = pd.read_csv(os.getcwd() + '/data/' + raw_path)
-    raw_data.columns = ["ID", "sex", "school", "country", "sleep",
+    raw_data = pd.read_csv(os.path.join(os.getcwd(), "data", raw_path))
+    raw_data.columns = ["ID", "school", "sex", "country", "sleep",
                         "suite_pref", "cleanliness", "alcohol",
-                        "siblings", "gender_pref"]
-except Exception as inst:
+                        "gender_pref"]
+except FileNotFoundError:
     print("ERROR: {} does not exist in data/. Please try again.".format(raw_path))
     exit(1)
 
@@ -64,7 +64,7 @@ raw_data["sex"] = [s[0] for s in raw_data["sex"]]
 raw_data["sleep"] = raw_data["sleep"].map(sleep_dict)
 raw_data["suite_pref"] = raw_data["suite_pref"].map(suite_dict)
 raw_data["cleanliness"] = raw_data["cleanliness"].map(cleanliness_dict)
-raw_data["siblings"] = raw_data["siblings"].map(sibs_dict)
+#raw_data["siblings"] = raw_data["siblings"].map(sibs_dict)
 raw_data["alcohol"] = raw_data["alcohol"].map(yes_no_dict)
 
 # Export data

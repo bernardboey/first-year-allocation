@@ -1,4 +1,5 @@
 import collections
+import random
 
 from ASAP import scoring
 
@@ -99,11 +100,93 @@ class SuiteRound:
 
 
 class RCAMatch:
-    def __init__(self, female_suites, male_suites, female_suites_propose=True):
-        #self.students = [SuiteRound.StudentMatchee(student) for student in students]
-        #self.suites = [SuiteRound.SuiteMatchee(suite) for suite in suites if suite.vacancies > 0]
-        self.suite_propose = female_suites_propose
+    def __init__(self, female_suites, male_suites, saga, elm, cendana, female_suites_propose=True):
+        self.female_suites = [RCAMatch.Matchee(suite) for suite in female_suites]
+        self.male_suites = [RCAMatch.Matchee(suite) for suite in male_suites]
+        self.female_suites_propose = female_suites_propose
         self.proposers = None
+        self.saga = saga
+        self.elm = elm
+        self.cendana = cendana
+
+    class Matchee:
+        def __init__(self, suite):
+            self.data = suite
+            self.scores = {}
+            self.ranking = None
+            self.current_choice = None
+
+        def __getattr__(self, attr):
+            return getattr(self.data, attr)
+
+        def generate_score(self, suite_matchee):
+            if suite_matchee in self.scores:
+                return self.scores[suite_matchee]
+            else:
+                score = scoring.calculate_rca_score(self.data, suite_matchee.data)
+                suite_matchee.scores[self] = score
+                return score
+
+        def generate_ranking(self, suite):
+            self.ranking = collections.deque(sorted(suite, key=self.generate_score))
+
+    def run_match(self):
+        for female_suite in self.female_suites:
+            female_suite.generate_ranking(self.male_suites)
+        for male_suite in self.male_suites:
+            male_suite.generate_ranking(self.female_suites)
+        if self.female_suites_propose:
+            self.proposers = self.female_suites
+        else:
+            self.proposers = self.male_suites
+        gale_shapley(self.proposers)
+        suites = self.female_suites if len(self.female_suites) > len(self.male_suites) else self.male_suites
+        random.shuffle(suites)
+        for i, suite in enumerate(suites, start=1):
+            rc1, rc2 = self.get_rc(suite.current_choice)
+            suite.data.rca = "Unallocated RCA"
+            suite.data.rc = rc1
+            if suite.current_choice:
+                if rc2:
+                    suite.current_choice.data.rc = rc2
+                    suite.current_choice.data.rca = "Unallocated RCA"
+                else:
+                    suite.current_choice.data.rc = rc1
+                    suite.current_choice.data.rca = f"RCA {i:02d}"
+                    suite.data.rca = f"RCA {i:02d}"
+
+    def get_rc(self, has_sibling_suite):
+        if has_sibling_suite:
+            if self.saga >= 2:
+                self.saga -= 2
+                return "Saga", None
+            elif self.elm >= 2:
+                self.elm -= 2
+                return "Elm", None
+            elif self.cendana >= 2:
+                self.cendana -= 2
+                return "Cendana", None
+            else:
+                if self.saga >= 1 and self.elm >= 1:
+                    return "Saga", "Elm"
+                elif self.saga >= 1 and self.cendana >= 1:
+                    return "Saga", "Cendana"
+                elif self.elm >= 1 and self.cendana >= 1:
+                    return "Elm", "Cendana"
+                else:
+                    raise RuntimeError("Not enough suites.")
+        else:
+            if self.saga >= 1:
+                self.saga -= 1
+                return "Saga", None
+            elif self.elm >= 1:
+                self.elm -= 1
+                return "Elm", None
+            elif self.cendana >= 1:
+                self.cendana -= 1
+                return "Cendana", None
+            else:
+                raise RuntimeError("Not enough suites.")
 
 
 def gale_shapley(proposers):

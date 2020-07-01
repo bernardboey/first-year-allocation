@@ -176,6 +176,7 @@ def generate_masterlist(suites, csv_path):
         "Suite": [student.current_choice.suite_num for student in students],
         "Room": ["TBC" for student in students],
         "RC": [student.current_choice.rc for student in students],
+        "RCA": [student.current_choice.rca for student in students],
         "Matric": [student.matric for student in students],
         "Gender": [student.sex.value for student in students],
         "Admit": [CURRENT_YEAR] * num_students,
