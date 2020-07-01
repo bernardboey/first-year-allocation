@@ -34,9 +34,7 @@ TODO: Check correctness of code (.copy()?)
 
 import sys
 
-import numpy as np
-
-from ASAP import scoring
+from ASAP import match
 from ASAP import parser
 from ASAP.allocation import SuiteAllocation
 
@@ -47,38 +45,40 @@ def main():
         return
     csv_path = sys.argv[1]
     female_students, male_students = parser.parse_student_data(csv_path)
-    female_suites = allocate_suites(female_students, "females")
-    allocate_randomly(female_students, "females")
-    male_suites = allocate_suites(male_students, "males")
-    allocate_randomly(male_students, "males")
-    parser.generate_masterlist(female_suites + male_suites, f"data/masterlist.csv")
+    female_suites = allocate_suites(female_students, "Female")
+    allocate_randomly(female_students, "Female")
+    male_suites = allocate_suites(male_students, "Male")
+    allocate_randomly(male_students, "Male")
+
+    rca_match = match.RCAMatch(female_suites, male_suites, saga=13, elm=14, cendana=15)
+    rca_match.run_match()
+
+    parser.generate_masterlist(female_suites + male_suites, f"output/first_year_masterlist_by_algorithm.csv")
 
 
 def allocate_suites(students, name):
     allocations = {}
-    for i in range(100):
-        suite_allocation = SuiteAllocation(students)
+    for i in range(500):
+        suite_allocation = SuiteAllocation(students, name)
         suite_allocation.match()
         global_score = suite_allocation.global_score()
         allocated_suites = suite_allocation.get_allocation()
         print(f"Global score: {global_score}")
         allocations[global_score] = allocated_suites
-    allocated_suites = allocations[max(allocations)]
-    scores = []
-    for suite in allocated_suites:
-        scores.append(scoring.calculate_score(suite, student=None))
-    print(f"\nFinal score: {np.mean(scores)}\n")
-    parser.generate_temp_results(allocated_suites, f"data/{name}.csv")
+    final_score = max(allocations)
+    allocated_suites = allocations[final_score]
+    print(f"\nFinal score: {final_score}\n")
+    parser.generate_temp_results(allocated_suites, f"output/{name}_suites.csv")
     return allocated_suites
 
 
 def allocate_randomly(students, name):
-    suite_allocation = SuiteAllocation(students)
+    suite_allocation = SuiteAllocation(students, name)
     suite_allocation.allocate_randomly()
     global_score = suite_allocation.global_score()
     allocated_suites = suite_allocation.get_allocation()
     print(f"\nRandom allocation score: {global_score}\n")
-    parser.generate_temp_results(allocated_suites, f"data/{name}_random.csv")
+    parser.generate_temp_results(allocated_suites, f"output/{name}_random.csv")
 
 
 if __name__ == "__main__":
