@@ -11,7 +11,7 @@ import datetime
 
 from ASAP.student import StudentData
 from ASAP import scoring
-import ASAP.util as util
+from ASAP import util
 
 # A dictionary mapping variable names to the corresponding column names, for the demographic columns.
 # Change this if the headers of the CSV are different.

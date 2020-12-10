@@ -89,6 +89,13 @@ def calculate_success(students, demographic_weight=0.4):
     return score
 
 
+def get_suite_score(citizenship, school_diversity, sleep_prefs, suite_prefs, cleanliness_prefs, alcohol_prefs, demographic_weight=0.4):
+    demographic_score = 0.6 * citizenship + 0.4 * school_diversity
+    pref_score = 0.2 * sleep_prefs + 0.4 * suite_prefs + 0.2 * cleanliness_prefs + 0.2 * alcohol_prefs
+    score = demographic_weight * demographic_score + (1 - demographic_weight) * pref_score
+    return score
+
+
 def citizenship_diversity_score(students):
     citizenships = [student.citizenship for student in students]
     num_locals = citizenships.count(Citizenship.LOCAL)

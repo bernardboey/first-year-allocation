@@ -130,7 +130,7 @@ class RCAMatch:
         def generate_ranking(self, suite):
             self.ranking = collections.deque(sorted(suite, key=self.generate_score))
 
-    def run_match(self):
+    def run_match(self):  # NEED TO PREVENT 4-2 suites from being paired with 3-2 suites (Citizenship)
         for female_suite in self.female_suites:
             female_suite.generate_ranking(self.male_suites)
         for male_suite in self.male_suites:
@@ -142,51 +142,35 @@ class RCAMatch:
         gale_shapley(self.proposers)
         suites = self.female_suites if len(self.female_suites) > len(self.male_suites) else self.male_suites
         random.shuffle(suites)
-        for i, suite in enumerate(suites, start=1):
-            rc1, rc2 = self.get_rc(suite.current_choice)
-            suite.data.rca = "Unallocated RCA"
-            suite.data.rc = rc1
-            if suite.current_choice:
-                if rc2:
-                    suite.current_choice.data.rc = rc2
-                    suite.current_choice.data.rca = "Unallocated RCA"
-                else:
-                    suite.current_choice.data.rc = rc1
-                    suite.current_choice.data.rca = f"RCA {i:02d}"
-                    suite.data.rca = f"RCA {i:02d}"
+        i = 1
+        for suite in suites:
+            if not suite.current_choice:
+                suite.data.rca = "Unallocated"
+                suite.data.rc = "Unallocated"
+            else:
+                rc = self.get_rc(suite, suite.current_choice)
+                suite.data.rc = rc
+                suite.current_choice.data.rc = rc
+                suite.current_choice.data.rca = f"RCA {i:02d}"
+                suite.data.rca = f"RCA {i:02d}"
+                i += 1
 
-    def get_rc(self, has_sibling_suite):
-        if has_sibling_suite:
-            if self.saga >= 2:
-                self.saga -= 2
-                return "Saga", None
-            elif self.elm >= 2:
-                self.elm -= 2
-                return "Elm", None
-            elif self.cendana >= 2:
-                self.cendana -= 2
-                return "Cendana", None
-            else:
-                if self.saga >= 1 and self.elm >= 1:
-                    return "Saga", "Elm"
-                elif self.saga >= 1 and self.cendana >= 1:
-                    return "Saga", "Cendana"
-                elif self.elm >= 1 and self.cendana >= 1:
-                    return "Elm", "Cendana"
-                else:
-                    raise RuntimeError("Not enough suites.")
+    def get_rc(self, suite, sibling_suite):
+        # SPECIAL CASE
+        student_names = [student.matric for student in sibling_suite.students] + [student.matric for student in suite.students]
+        if "UC1" in student_names:
+            return "Cendana"
+        if self.saga >= 2:
+            self.saga -= 2
+            return "Saga"
+        elif self.elm >= 2:
+            self.elm -= 2
+            return "Elm"
+        elif self.cendana >= 2:
+            self.cendana -= 2
+            return "Cendana"
         else:
-            if self.saga >= 1:
-                self.saga -= 1
-                return "Saga", None
-            elif self.elm >= 1:
-                self.elm -= 1
-                return "Elm", None
-            elif self.cendana >= 1:
-                self.cendana -= 1
-                return "Cendana", None
-            else:
-                raise RuntimeError("Not enough suites.")
+            raise RuntimeError("Not enough suites.")
 
 
 def gale_shapley(proposers):
