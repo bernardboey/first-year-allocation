@@ -50,7 +50,7 @@ def main():
     male_suites = allocate_suites(male_students, "Male")
     allocate_randomly(male_students, "Male")
 
-    rca_match = match.RCAMatch(female_suites, male_suites, saga=13, elm=14, cendana=15)
+    rca_match = match.RCAMatch(female_suites, male_suites, saga=16, elm=16, cendana=16)
     rca_match.run_match()
 
     parser.generate_masterlist(female_suites + male_suites, f"output/first_year_masterlist_by_algorithm.csv")
@@ -58,7 +58,7 @@ def main():
 
 def allocate_suites(students, name):
     allocations = {}
-    for i in range(500):
+    for i in range(20):
         suite_allocation = SuiteAllocation(students, name)
         suite_allocation.match()
         global_score = suite_allocation.global_score()
