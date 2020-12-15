@@ -1,7 +1,7 @@
 import collections
 import random
 
-from ASAP import scoring
+from ASAP.backend import scoring
 
 
 class SuiteRound:
