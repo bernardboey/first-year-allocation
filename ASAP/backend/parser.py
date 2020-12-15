@@ -9,9 +9,9 @@ import pandas as pd
 import numpy as np
 import datetime
 
-from ASAP.student import StudentData
-from ASAP import scoring
-from ASAP import util
+from ASAP.backend.student import StudentData
+from ASAP.backend import scoring
+from ASAP.backend import util
 
 # A dictionary mapping variable names to the corresponding column names, for the demographic columns.
 # Change this if the headers of the CSV are different.

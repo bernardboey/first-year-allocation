@@ -34,9 +34,9 @@ TODO: Check correctness of code (.copy()?)
 
 import sys
 
-from ASAP import match
-from ASAP import parser
-from ASAP.allocation import SuiteAllocation
+from ASAP.backend import match
+from ASAP.backend import parser
+from ASAP.backend.allocation import SuiteAllocation
 
 
 def main():

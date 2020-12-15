@@ -1,7 +1,7 @@
 import math
 import itertools
 
-from ASAP.student import Citizenship
+from ASAP.backend.student import Citizenship
 
 
 def calculate_score(suite, student):
