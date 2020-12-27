@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Verify Living Preferences{% endblock %}
+{% block content %}
+    <div class="text-start mt-2">
+        <a class="btn btn-secondary py-0" href="{{ url_for('select_column_type') }}"><strong>&#x2190;</strong> Back</a>
+    </div>
+
+    <h1>Verify Living Preferences</h1>
+    <div class="alert alert-primary mt-4 mb-3">
+        <h5 class="mb-0">For each living preference question, please input the order of the options</h5>
+        <p>It does not matter if.......</p>
+    </div>
+    {% if error_msg %}
+        <div class="alert alert-danger text-start">Error: {{ error_msg }}</div>
+    {% endif %}
+    <form action="" method="post" enctype="multipart/form-data" class="text-start">
+        {% for col in living_pref_cols %}{% set col_loop = loop %}
+            <div class="mb-4">
+                <label for="column{{ col_loop.index0 }}" class="form-label fw-bold mb-0">{{ col }}</label>
+                <div class="form-text mb-1">{{ unique_values[col_loop.index0] }}</div>
+                {% for value in unique_values[col_loop.index0] %}{% set val_loop = loop %}
+                    <div>
+                        <label for="column{{ col_loop.index0 }}-value{{ val_loop.index0 }}"
+                               class="form-label fw-bold mb-0">{{ value }}</label>
+                        <select id="column{{ col_loop.index0 }}-value{{ val_loop.index0 }}"
+                                name="column{{ col_loop.index0 }}-value{{ val_loop.index0 }}"
+                                class="form-select" aria-label="Select order for {{ value }}">
+                            {% for i in range(unique_values[col_loop.index0] | length) %}
+                                <option value="{{ i }}"
+                                        {% if request.form["column" ~ col_loop.index0 ~ "value" ~ val_loop.index0] == i or selected_values["column" ~ col_loop.index0 ~ "value" ~ val_loop.index0] == i %}
+                                        selected
+                                        {% endif %}>
+                                    {{ i }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        <div class="mb-2">
+            <button type="submit" class="btn btn-primary">Proceed</button>
+        </div>
+    </form>
+{% endblock %}
