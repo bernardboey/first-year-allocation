@@ -33,10 +33,60 @@ TODO: Check correctness of code (.copy()?)
 """
 
 import sys
+import enum
+import os
+from typing import Dict, List
+
+import pandas as pd
 
 from ASAP.backend import match
 from ASAP.backend import parser
 from ASAP.backend.allocation import SuiteAllocation
+
+
+class ColumnTypes(enum.Enum):
+    NAME = "Name/ID"
+    SCHOOL = "School"
+    SEX = "Sex"
+    COUNTRY = "Country"
+    LIVING_PREF = "Living Preference"
+    OTHERS = "Others"
+
+
+class ASAP:
+    def __init__(self, filepath):
+        self.filepath = filepath
+        self.filename = os.path.basename(filepath)
+        self.students_df = pd.read_csv(filepath)
+        self.col_to_type: Dict[str, ColumnTypes] = {}
+        self.type_to_col: Dict[ColumnTypes, List[str]] = {}
+        self.living_pref_cols = []
+        # check_unique_column_names
+
+    def __str__(self):
+        return f"<ASAP object>"
+
+    def __repr__(self):
+        return f"ASAP({self.filename})"
+
+    def get_colnames_and_unique_values(self):
+        columns = list(self.students_df.columns)
+        unique_values: List[List[str]] = [self.students_df[col].value_counts().index.tolist() for col in columns]
+        head_values = [self.students_df.loc[i, :].values.tolist() for i in range(5)]
+        return columns, unique_values, head_values
+
+    def set_column_types(self, col_to_type):
+        # Raise ValueError in case of failed validation
+        # Verify uniqueness of column names here
+        # Add in validation to check that only one column for each type (except country and living preference)
+        # Add in validation to check that all types have corresponding columns
+        self.col_to_type = {col: ColumnTypes(_type) for col, _type in col_to_type.items()}
+        self.type_to_col = {_type: [col for col, __type in self.col_to_type.items() if _type == __type]
+                            for _type in ColumnTypes}
+        self.living_pref_cols = [col for col, _type in self.col_to_type.items() if _type is ColumnTypes.LIVING_PREF]
+
+    def column_types_defined(self):
+        return self.col_to_type and self.type_to_col
 
 
 def main():
