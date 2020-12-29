@@ -103,10 +103,10 @@ def verify_living_preferences():
     unique_values = [values for col, values in zip(colnames, unique_values) if col in asap_obj.living_pref_cols]
     if request.method == 'POST':
         # get data from form.request
-
+        selected_order = [[request.form[f"column{i}-value{j}"] for j in range(len(unique_values[i]))]
+                          for i in range(len(colnames))]
         try:
-            # asap_obj.set_living_pref_order
-            pass
+            asap_obj.set_living_pref_order(selected_order)
         except ValueError as e:
             error_msg = str(e)
         else:

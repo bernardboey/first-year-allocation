@@ -35,7 +35,10 @@
         </div>
     </a>
     {% if error_msg %}
-        <div class="alert alert-danger text-start">Error: {{ error_msg }}</div>
+        <div class="alert alert-danger text-start">
+            <p class="fw-bold">ERROR</p>
+            <p class="mb-0">{{ error_msg }}</p>
+        </div>
     {% endif %}
     <form action="{{ url_for("select_column_type", _anchor="select-column") }}" method="post"
           enctype="multipart/form-data" class="text-start">
