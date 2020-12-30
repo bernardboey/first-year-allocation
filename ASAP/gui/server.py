@@ -8,7 +8,7 @@ from flask import Flask, request, render_template, redirect, url_for
 from werkzeug.utils import secure_filename
 import webview
 
-from ASAP.__main__ import ASAP
+from ASAP.__main__ import ASAP, LivingPrefColumnType
 
 # NOT USING CSRF TOKENS FOR SIMPLICITY
 # REFERENCES
@@ -149,7 +149,11 @@ def select_options():
 @app.route('/review_data', methods=['GET', 'POST'])
 def review_data():
     asap_obj = restore_pickle()
-
+    colnames, _, head_values = asap_obj.get_colnames_and_unique_values()
+    colnames = [f"Living Pref: {col}"
+                if isinstance(asap_obj.col_to_type[col], LivingPrefColumnType)
+                else asap_obj.col_to_type[col].desc
+                for col in colnames]
     # Name of CSV file
     # Table
     # Number of students
@@ -160,7 +164,20 @@ def review_data():
 
     if request.method == 'POST':
         return redirect(url_for("run_allocation"))
-    return render_template('review_data.html')
+    return render_template('review_data.html',
+                           csv_filename=asap_obj.filename,
+                           colnames=colnames, head_values=enumerate(head_values, start=1),
+                           total_students=asap_obj.total_students,
+                           num_males=asap_obj.num_males, num_females=asap_obj.num_females,
+                           avail_suites_saga=asap_obj.avail_suites_saga,
+                           avail_suites_elm=asap_obj.avail_suites_elm,
+                           avail_suites_cendana=asap_obj.avail_suites_cendana,
+                           total_suites=asap_obj.total_suites, required_suites=asap_obj.required_suites,
+                           required_suites_male=asap_obj.required_suites_male,
+                           required_suites_female=asap_obj.required_suites_female,
+                           num_living_prefs=len(asap_obj.LIVING_PREF.cols),
+                           living_prefs=asap_obj.LIVING_PREF.cols,
+                           living_pref_order=asap_obj.LIVING_PREF.selected_order)
 
 
 @app.route('/run_allocation', methods=['GET', 'POST'])

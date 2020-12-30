@@ -131,8 +131,8 @@ class ASAP:
         self.avail_suites_cendana = 0
         self.total_suites = 0
         self.required_suites = 0
-        self.required_male_suites = 0
-        self.required_female_suites = 0
+        self.required_suites_male = 0
+        self.required_suites_female = 0
         self.num_males = 0
         self.num_females = 0
 
@@ -242,9 +242,9 @@ class ASAP:
         self.avail_suites_cendana = cendana
 
         self.total_suites = self.avail_suites_saga + self.avail_suites_elm + self.avail_suites_cendana
-        self.required_male_suites = math.ceil(self.num_males / 6)
-        self.required_female_suites = math.ceil(self.num_females / 6)
-        self.required_suites = self.required_male_suites + self.required_female_suites
+        self.required_suites_male = math.ceil(self.num_males / 6)
+        self.required_suites_female = math.ceil(self.num_females / 6)
+        self.required_suites = self.required_suites_male + self.required_suites_female
         if self.total_suites < self.required_suites:
             raise ValueError(f"Not enough suites. {self.required_suites} suites are required to house "
                              f"{self.num_females} females and {self.num_males} males but only {self.total_suites} are "
