@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Select Column Type{% endblock %}
+{% block title %}Select Column Data Type{% endblock %}
 {% block content %}
     <div class="text-start mt-2">
         <a class="btn btn-secondary py-0" href="{{ url_for('home') }}"><strong>&#x2190;</strong> Back</a>
     </div>
 
-    <h1>Select Column Type</h1>
+    <h1>Select Column Data Type</h1>
     <p class="text-start fw-bold mt-4">{{ csv_filename }}</p>
     <div class="text-start">
         <table class="table">
@@ -65,7 +65,7 @@
             </div>
         {% endfor %}
 
-        <div class="mb-2">
+        <div class="mb-2 text-center">
             <button type="submit" class="btn btn-primary">Proceed</button>
         </div>
     </form>

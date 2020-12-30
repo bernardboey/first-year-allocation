@@ -8,7 +8,8 @@
     <h1>Verify Living Preferences</h1>
     <div class="alert alert-primary mt-4 mb-4">
         <h5 class="mb-2">For each living preference question, please input the order of the options.</h5>
-        <p class="mb-0">E.g. If there are 4 options, please order them from 0 to 3. It does not matter which 0 and which is 3.</p>
+        <p class="mb-0">E.g. If there are 4 options, please order them from 0 to 3. It does not matter which 0 and which
+            is 3.</p>
     </div>
     {% if error_msg %}
         <div class="alert alert-danger text-start mb-4">
@@ -16,8 +17,23 @@
             <p class="mb-0">{{ error_msg }}</p>
         </div>
     {% endif %}
-    <form action="" method="post" enctype="multipart/form-data" class="text-start">
+    <form id="living-pref-form" action="" method="post" enctype="multipart/form-data" class="text-start">
+        <input id="living-pref-data" type="hidden" name="living-pref-data" value="" />
         {% for col in living_pref_cols %}{% set col_loop = loop %}
+            <div class="mb-5">
+                <label for="column{{ col_loop.index0 }}" class="form-label fw-bold mb-3">{{ col }}</label>
+                <ul class="sortable p-0" style="list-style-type: none;" aria-dropeffect="move">
+                    {% for value in unique_values[col_loop.index0] %}{% set val_loop = loop %}
+                        <li class="mb-2 text-light p-2"
+                            style="background-color: #3d8bfd; cursor: pointer; -webkit-user-drag: element; position: relative; z-index: 10; display: list-item;"
+                            draggable="true"
+                            role="option" aria-grabbed="false">{{ value }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+
+        {#        {% for col in living_pref_cols %}{% set col_loop = loop %}
             <div class="mb-5">
                 <label for="column{{ col_loop.index0 }}" class="form-label fw-bold mb-3">{{ col }}</label>
                 {% for value in unique_values[col_loop.index0] %}{% set val_loop = loop %}
@@ -29,7 +45,7 @@
                                 class="form-select" aria-label="Select order for {{ value }}">
                             {% for i in range(unique_values[col_loop.index0] | length) %}
                                 <option value="{{ i }}"
-                                        {% if request.form["column" ~ col_loop.index0 ~ "value" ~ val_loop.index0] == i or selected_values["column" ~ col_loop.index0 ~ "value" ~ val_loop.index0] == i %}
+                                        {% if request.form["column" ~ col_loop.index0 ~ "-value" ~ val_loop.index0] == i | string or selected_values["column" ~ col_loop.index0 ~ "-value" ~ val_loop.index0] == i | string %}
                                         selected
                                         {% endif %}>
                                     {{ i }}
@@ -39,10 +55,36 @@
                     </div>
                 {% endfor %}
             </div>
-        {% endfor %}
+        {% endfor %}#}
 
-        <div class="mb-2">
+        <div class="mb-2 text-center">
             <button type="submit" class="btn btn-primary">Proceed</button>
         </div>
     </form>
+    <script src="{{ url_for("static", filename="html5sortable.js") }}"></script>
+    <script>
+        document.querySelector("#living-pref-form").onsubmit = function () {
+            const serialized = sortable('.sortable', 'serialize');
+            const data = [];
+            for (let i = 0; i < serialized.length; i++) {
+                data.push([]);
+                for (let j = 0; j < serialized[i].items.length; j++) {
+                    data[i].push(serialized[i].items[j].text);
+                }
+            }
+            document.querySelector("#living-pref-data").value = JSON.stringify(data);
+        };
+
+        sortable('.sortable', {
+            forcePlaceholderSize: true,
+            hoverClass: 'bg-secondary',
+            placeholderClass: 'border border-primary mb-2 w-100',
+            itemSerializer: (item, container) => {
+                return {
+                    index: item.index,
+                    text: item.node.innerText
+                }
+            }
+        });
+    </script>
 {% endblock %}

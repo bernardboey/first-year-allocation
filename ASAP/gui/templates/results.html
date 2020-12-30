@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Results{% endblock %}
+{% block content %}
+    <div class="text-start mt-2">
+        <a class="btn btn-secondary py-0" href="{{ url_for('run_allocation') }}"><strong>&#x2190;</strong> Back</a>
+    </div>
+
+    <h1>Results</h1>
+    <div class="alert alert-primary mt-4 mb-4">
+        <h5 class="mb-2">For each living preference question, please input the order of the options.</h5>
+        <p class="mb-0">E.g. If there are 4 options, please order them from 0 to 3. It does not matter which 0 and which
+            is 3.</p>
+    </div>
+    {% if error_msg %}
+        <div class="alert alert-danger text-start mb-4">
+            <p class="fw-bold">ERROR</p>
+            <p class="mb-0">{{ error_msg }}</p>
+        </div>
+    {% endif %}
+    <form action="" method="post" enctype="multipart/form-data" class="text-start">
+
+        <div class="mb-2 text-center">
+            <button type="submit" class="btn btn-primary">Proceed</button>
+        </div>
+    </form>
+{% endblock %}

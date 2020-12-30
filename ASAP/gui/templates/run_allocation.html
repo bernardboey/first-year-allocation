@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Allocation in progress{% endblock %}
+{% block content %}
+    <div class="text-start mt-2">
+        <a class="btn btn-secondary py-0" href="{{ url_for('review_data') }}"><strong>&#x2190;</strong>
+            Back</a>
+    </div>
+
+    <h1>Allocation in progress...</h1>
+    <div class="alert alert-primary mt-4 mb-4">
+        <h5 class="mb-0">The algorithm will take a few minutes to run.</h5>
+    </div>
+    {% if error_msg %}
+        <div class="alert alert-danger text-start mb-4">
+            <p class="fw-bold">ERROR</p>
+            <p class="mb-0">{{ error_msg }}</p>
+        </div>
+    {% endif %}
+    <div id="loading-spinner" class="text-center" style="display: none">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+    <form id="begin-allocation-button" action="" method="post" enctype="multipart/form-data" class="text-center">
+        <div class="mb-2">
+            <button type="submit" class="btn btn-primary">Begin Allocation</button>
+        </div>
+    </form>
+    <script>
+        document.querySelector("#begin-allocation-button").onsubmit = function () {
+            document.querySelector("#loading-spinner").style.display = "block";
+            document.querySelector("#begin-allocation-button").style.display = "none";
+        };
+    </script>
+{% endblock %}
