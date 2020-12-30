@@ -36,6 +36,7 @@ import sys
 import os
 import collections
 import time
+import math
 from typing import Dict, List, Tuple
 
 import pandas as pd
@@ -111,6 +112,7 @@ class ASAP:
         self.filepath = filepath
         self.filename = os.path.basename(filepath)
         self.students_df = pd.read_csv(filepath)
+        self.total_students = len(self.students_df)
         self.colnames = list(self.students_df.columns)
         self.col_to_type: Dict[str, ColumnType] = {}
         # self.type_to_cols: Dict[DataType, List[str]] = {}
@@ -127,6 +129,12 @@ class ASAP:
         self.avail_suites_saga = 0
         self.avail_suites_elm = 0
         self.avail_suites_cendana = 0
+        self.total_suites = 0
+        self.required_suites = 0
+        self.required_male_suites = 0
+        self.required_female_suites = 0
+        self.num_males = 0
+        self.num_females = 0
 
         self.col_types_defined = False
         self.living_pref_order_defined = False
@@ -200,6 +208,8 @@ class ASAP:
             if value not in ("M", "F", "MALE", "FEMALE"):
                 raise ValueError(f"Column that represents sex should only contain 'M' and 'F'. "
                                  f"Currently it contains '{value}' as well.")
+        self.num_males = len(self.students_df[self.students_df[self.SEX.col] == 'M'])
+        self.num_females = len(self.students_df[self.students_df[self.SEX.col] == 'F'])
 
         if "Singapore" not in self.students_df[self.COUNTRY.cols[0]].unique():
             raise ValueError(f"The value 'Singapore' cannot be found in the column you selected for "
@@ -230,6 +240,16 @@ class ASAP:
         self.avail_suites_saga = saga
         self.avail_suites_elm = elm
         self.avail_suites_cendana = cendana
+
+        self.total_suites = self.avail_suites_saga + self.avail_suites_elm + self.avail_suites_cendana
+        self.required_male_suites = math.ceil(self.num_males / 6)
+        self.required_female_suites = math.ceil(self.num_females / 6)
+        self.required_suites = self.required_male_suites + self.required_female_suites
+        if self.total_suites < self.required_suites:
+            raise ValueError(f"Not enough suites. {self.required_suites} suites are required to house "
+                             f"{self.num_females} females and {self.num_males} males but only {self.total_suites} are "
+                             f"available. Did you enter the correct number of available suites? "
+                             f"Have you removed the gender neutral students from the CSV file?")
 
         self.options_defined = True
 

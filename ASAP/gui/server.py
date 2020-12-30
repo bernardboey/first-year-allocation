@@ -138,7 +138,7 @@ def select_options():
             error_msg = str(e)
         else:
             save_pickle(asap_obj)
-        return redirect(url_for("review_data"))
+            return redirect(url_for("review_data"))
     return render_template('select_options.html',
                            saga_suites=saga,
                            elm_suites=elm,
@@ -148,12 +148,19 @@ def select_options():
 
 @app.route('/review_data', methods=['GET', 'POST'])
 def review_data():
-    error_msg = None
     asap_obj = restore_pickle()
+
+    # Name of CSV file
+    # Table
+    # Number of students
+    # Column types
+    # Living pref order
+    # No. of saga/elm/cendana suites
+    # etc.
+
     if request.method == 'POST':
         return redirect(url_for("run_allocation"))
-    return render_template('review_data.html',
-                           error_msg=error_msg)
+    return render_template('review_data.html')
 
 
 @app.route('/run_allocation', methods=['GET', 'POST'])
