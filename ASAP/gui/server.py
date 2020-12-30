@@ -2,19 +2,20 @@ import os
 import inspect
 import pickle
 import shutil
+import json
 
-from flask import Flask, request, render_template, flash, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for
 from werkzeug.utils import secure_filename
 import webview
 
-from ASAP.__main__ import ASAP, ColumnTypes
+from ASAP.__main__ import ASAP
 
 # NOT USING CSRF TOKENS FOR SIMPLICITY
 # REFERENCES
 # https://flask.palletsprojects.com/en/1.1.x/patterns/fileuploads/
 # https://github.com/r0x0r/pywebview/tree/master/examples/flask_app
 
-app = Flask(__name__, static_folder='./assets', template_folder='./templates')
+app = Flask(__name__, static_folder='./static', template_folder='./templates')
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1  # disable caching
 UPLOAD_FOLDER = 'tmp'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -70,23 +71,23 @@ def select_column_type():
     error_msg = None
     selected_values = {}
     asap_obj = restore_pickle()
-    if asap_obj.column_types_defined():
-        for i, (col, _type) in enumerate(asap_obj.col_to_type.items()):
-            selected_values[f"column{i}"] = _type.value
     colnames, unique_values, head_values = asap_obj.get_colnames_and_unique_values()
     if request.method == 'POST':
-        selected_types = [request.form[f"column{i}"] for i in range(len(colnames))]
-        col_to_type = {col: _type for col, _type in zip(colnames, selected_types)}
+        col_type_assoc = [(col, request.form[f"column{i}"]) for i, col in enumerate(colnames)]
         try:
-            asap_obj.set_column_types(col_to_type)
+            asap_obj.set_column_types(col_type_assoc)
         except ValueError as e:
             error_msg = str(e)
         else:
             save_pickle(asap_obj)
             return redirect(url_for("verify_living_preferences"))
+    elif request.method == 'GET':
+        if asap_obj.col_types_defined:
+            for i, (col, _type) in enumerate(asap_obj.col_to_type.items()):
+                selected_values[f"column{i}"] = _type.desc
     return render_template('select_column_type.html',
                            csv_filename=asap_obj.filename,
-                           coltypes=[e.value for e in ColumnTypes],
+                           coltypes=[e.desc for e in asap_obj.COL_TYPES],
                            colnames=colnames,
                            unique_values=unique_values,
                            head_values=enumerate(head_values, start=1),
@@ -97,27 +98,91 @@ def select_column_type():
 @app.route('/verify_living_preferences', methods=['GET', 'POST'])
 def verify_living_preferences():
     error_msg = None
-    selected_values = {}
     asap_obj = restore_pickle()
     colnames, unique_values, _ = asap_obj.get_colnames_and_unique_values()
-    unique_values = [values for col, values in zip(colnames, unique_values) if col in asap_obj.living_pref_cols]
+    unique_values = [sorted(values) for col, values in zip(colnames, unique_values) if col in asap_obj.LIVING_PREF.cols]
+    if asap_obj.living_pref_order_defined:
+        unique_values = asap_obj.LIVING_PREF.selected_order
     if request.method == 'POST':
-        # get data from form.request
-        selected_order = [[request.form[f"column{i}-value{j}"] for j in range(len(unique_values[i]))]
-                          for i in range(len(colnames))]
+        selected_order = json.loads(request.form["living-pref-data"])
         try:
             asap_obj.set_living_pref_order(selected_order)
         except ValueError as e:
             error_msg = str(e)
         else:
             save_pickle(asap_obj)
-            return redirect(url_for("home"))
+            return redirect(url_for("select_options"))
     return render_template('verify_living_preferences.html',
-                           living_pref_cols=asap_obj.living_pref_cols,
+                           living_pref_cols=asap_obj.LIVING_PREF.cols,
                            unique_values=unique_values,
-                           selected_values=selected_values,
                            error_msg=error_msg)
 
 
-webview.create_window('ASAP: Automated Suite Allocation Program for Yale-NUS First-Years', app)
-webview.start(debug=True)
+@app.route('/select_options', methods=['GET', 'POST'])
+def select_options():
+    error_msg = None
+    asap_obj = restore_pickle()
+    if asap_obj.options_defined:
+        saga = asap_obj.avail_suites_saga
+        elm = asap_obj.avail_suites_elm
+        cendana = asap_obj.avail_suites_cendana
+    else:
+        saga, elm, cendana = 16, 16, 16
+    if request.method == 'POST':
+        saga = int(request.form["saga-suites"])
+        elm = int(request.form["elm-suites"])
+        cendana = int(request.form["cendana-suites"])
+        try:
+            asap_obj.set_options(saga, elm, cendana)
+        except ValueError as e:
+            error_msg = str(e)
+        else:
+            save_pickle(asap_obj)
+        return redirect(url_for("review_data"))
+    return render_template('select_options.html',
+                           saga_suites=saga,
+                           elm_suites=elm,
+                           cendana_suites=cendana,
+                           error_msg=error_msg)
+
+
+@app.route('/review_data', methods=['GET', 'POST'])
+def review_data():
+    error_msg = None
+    asap_obj = restore_pickle()
+    if request.method == 'POST':
+        return redirect(url_for("run_allocation"))
+    return render_template('review_data.html',
+                           error_msg=error_msg)
+
+
+@app.route('/run_allocation', methods=['GET', 'POST'])
+def run_allocation():
+    error_msg = None
+    asap_obj = restore_pickle()
+    if request.method == 'POST':
+        try:
+            asap_obj.run_allocation()
+        except Exception as e:  # General Exception because various kinds of errors can be thrown by run_allocation()
+            error_msg = str(e)
+        else:
+            save_pickle(asap_obj)
+            return redirect(url_for("results"))
+    return render_template('run_allocation.html', error_msg=error_msg)
+
+
+@app.route('/results', methods=['GET', 'POST'])
+def results():
+    error_msg = None
+    asap_obj = restore_pickle()
+    return render_template('results.html',
+                           error_msg=error_msg)
+
+
+def main():
+    webview.create_window('ASAP: Automated Suite Allocation Program for Yale-NUS First-Years', app)
+    webview.start(debug=True)
+
+
+if __name__ == "__main__":
+    main()
