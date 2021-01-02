@@ -202,7 +202,7 @@ def review_data():
                            num_living_prefs=len(asap_obj.LIVING_PREF.cols),
                            living_prefs=asap_obj.LIVING_PREF.cols,
                            living_pref_order=asap_obj.LIVING_PREF.selected_order,
-                           weights={col: int(weight * 100) for col, weight in asap_obj.LIVING_PREF.weights.items()})
+                           weights=asap_obj.LIVING_PREF.weights)
 
 
 @app.route('/run_allocation', methods=['GET', 'POST'])

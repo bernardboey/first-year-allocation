@@ -10,17 +10,17 @@ def calculate_score(suite, student):
     else:
         students = suite.students + [student]
 
-    overseas_countries = [student.country for student in students if student.citizenship == Citizenship.INTERNATIONAL]
+    overseas_countries = [country for student in students for country in student.country if country != "Singapore"]
     duplicate_overseas_countries_score = len(overseas_countries) - len(set(overseas_countries)) * 120
 
     schools = [student.school for student in students]
     duplicate_schools_score = len(schools) - len(set(schools)) * 100
 
     # Magic numbers are 2 2 1.5 0.5 for np.std and 1.73 1.73 1.41 1 for pairwise_root_diff
-    sleep_prefs = get_score([student.sleep_pref for student in students], MaxScores.get("sleep_pref"))
-    suite_prefs = get_score([student.suite_pref for student in students], MaxScores.get("suite_pref"))
-    cleanliness_prefs = get_score([student.cleanliness_pref for student in students], MaxScores.get("cleanliness_pref"))
-    alcohol_prefs = get_score([student.alcohol_pref for student in students], MaxScores.get("alcohol_pref"))
+    sleep_prefs = get_score([student.sleep_pref for student in students], Scores.get_max("sleep_pref"))
+    suite_prefs = get_score([student.suite_pref for student in students], Scores.get_max("suite_pref"))
+    cleanliness_prefs = get_score([student.cleanliness_pref for student in students], Scores.get_max("cleanliness_pref"))
+    alcohol_prefs = get_score([student.alcohol_pref for student in students], Scores.get_max("alcohol_pref"))
 
     score = 0.2 * sleep_prefs + 0.4 * suite_prefs + 0.2 * cleanliness_prefs + 0.2 * alcohol_prefs
     score += duplicate_overseas_countries_score + duplicate_schools_score
@@ -119,7 +119,7 @@ def citizenship_diversity_score(students):
 
 
 def country_diversity_score(students):
-    overseas_countries = [student.country for student in students if student.country != "Singapore"]
+    overseas_countries = [country for student in students for country in student.country if country != "Singapore"]
     if len(overseas_countries) == len(set(overseas_countries)):
         return 1
     elif len(overseas_countries) - len(set(overseas_countries)) == 1:
@@ -145,32 +145,37 @@ def school_diversity_score(students):
 
 
 def sleep_pref_score(students):
-    return get_score([student.sleep_pref for student in students], MaxScores.get("sleep_pref"), higher_better=True)
+    return get_score([student.sleep_pref for student in students], Scores.get_max("sleep_pref"), higher_better=True)
 
 
 def suite_pref_score(students):
-    return get_score([student.suite_pref for student in students], MaxScores.get("suite_pref"), higher_better=True)
+    return get_score([student.suite_pref for student in students], Scores.get_max("suite_pref"), higher_better=True)
 
 
 def cleanliness_pref_score(students):
-    return get_score([student.cleanliness_pref for student in students], MaxScores.get("cleanliness_pref"), higher_better=True)
+    return get_score([student.cleanliness_pref for student in students], Scores.get_max("cleanliness_pref"), higher_better=True)
 
 
 def alcohol_pref_score(students):
-    return get_score([student.alcohol_pref for student in students], MaxScores.get("alcohol_pref"), higher_better=True)
+    return get_score([student.alcohol_pref for student in students], Scores.get_max("alcohol_pref"), higher_better=True)
 
 
-class MaxScores:
+class Scores:
     max_scores = {}
+    weights = {}
 
     @staticmethod
     def set_max_scores(living_pref_unique_options):
         for living_pref, unique_options in living_pref_unique_options.items():
-            MaxScores.max_scores[living_pref] = get_max_score(unique_options)
+            Scores.max_scores[living_pref] = get_max_score(unique_options)
 
     @staticmethod
-    def get(living_pref):
+    def set_weights(weights):
+        Scores.weights = weights
+
+    @staticmethod
+    def get_max(living_pref):
         try:
-            return MaxScores.max_scores[living_pref]
+            return Scores.max_scores[living_pref]
         except KeyError:
             raise RuntimeError(f"Max score has not yet been set for {living_pref}.")
