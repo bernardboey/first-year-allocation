@@ -83,8 +83,15 @@ def select_column_type():
             return redirect(url_for("verify_living_preferences"))
     elif request.method == 'GET':
         if asap_obj.col_types_defined:
-            for i, (col, _type) in enumerate(asap_obj.col_to_type.items()):
+            for i, (_, _type) in enumerate(asap_obj.col_to_type.items()):
                 selected_values[f"column{i}"] = _type.desc
+
+        # TEMPORARILY HERE TO SPEED UP DEVELOPMENT #
+        for i, _type in enumerate((asap_obj.NAME, asap_obj.SCHOOL, asap_obj.SEX, asap_obj.COUNTRY, asap_obj.LIVING_PREF,
+                                   asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.OTHERS)):
+            selected_values[f"column{i}"] = _type.desc
+        # END OF BLOCK #
+
     return render_template('select_column_type.html',
                            csv_filename=asap_obj.filename,
                            coltypes=[e.desc for e in asap_obj.COL_TYPES],
@@ -111,10 +118,33 @@ def verify_living_preferences():
             error_msg = str(e)
         else:
             save_pickle(asap_obj)
-            return redirect(url_for("select_options"))
+            return redirect(url_for("select_weights"))
     return render_template('verify_living_preferences.html',
                            living_pref_cols=asap_obj.LIVING_PREF.cols,
                            unique_values=unique_values,
+                           error_msg=error_msg)
+
+
+@app.route('/select_weights', methods=['GET', 'POST'])
+def select_weights():
+    error_msg = None
+    asap_obj = restore_pickle()
+    if asap_obj.weights_defined:
+        weights = asap_obj.LIVING_PREF.weights
+    else:
+        weights = {col: 100 // len(asap_obj.LIVING_PREF.cols) for i, col in enumerate(asap_obj.LIVING_PREF.cols)}
+    if request.method == 'POST':
+        weights = {col: int(request.form[f"column{i}"]) for i, col in enumerate(asap_obj.LIVING_PREF.cols)}
+        try:
+            asap_obj.set_weights(weights)
+        except ValueError as e:
+            error_msg = str(e)
+        else:
+            save_pickle(asap_obj)
+            return redirect(url_for("select_options"))
+    return render_template('select_weights.html',
+                           living_pref_cols=asap_obj.LIVING_PREF.cols,
+                           weights=weights,
                            error_msg=error_msg)
 
 
@@ -154,16 +184,10 @@ def review_data():
                 if isinstance(asap_obj.col_to_type[col], LivingPrefColumnType)
                 else asap_obj.col_to_type[col].desc
                 for col in colnames]
-    # Name of CSV file
-    # Table
-    # Number of students
-    # Column types
-    # Living pref order
-    # No. of saga/elm/cendana suites
-    # etc.
 
     if request.method == 'POST':
         return redirect(url_for("run_allocation"))
+
     return render_template('review_data.html',
                            csv_filename=asap_obj.filename,
                            colnames=colnames, head_values=enumerate(head_values, start=1),
@@ -177,7 +201,8 @@ def review_data():
                            required_suites_female=asap_obj.required_suites_female,
                            num_living_prefs=len(asap_obj.LIVING_PREF.cols),
                            living_prefs=asap_obj.LIVING_PREF.cols,
-                           living_pref_order=asap_obj.LIVING_PREF.selected_order)
+                           living_pref_order=asap_obj.LIVING_PREF.selected_order,
+                           weights={col: int(weight * 100) for col, weight in asap_obj.LIVING_PREF.weights.items()})
 
 
 @app.route('/run_allocation', methods=['GET', 'POST'])
@@ -185,6 +210,9 @@ def run_allocation():
     error_msg = None
     asap_obj = restore_pickle()
     if request.method == 'POST':
+        asap_obj.run_allocation()
+        save_pickle(asap_obj)
+        return redirect(url_for("results"))
         try:
             asap_obj.run_allocation()
         except Exception as e:  # General Exception because various kinds of errors can be thrown by run_allocation()
