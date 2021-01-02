@@ -44,6 +44,8 @@ import pandas as pd
 from ASAP.backend import match
 from ASAP.backend import parser
 from ASAP.backend.allocation import SuiteAllocation
+from ASAP.backend import scoring
+from ASAP.backend.student import StudentData
 
 
 class ColumnType:
@@ -91,21 +93,10 @@ class LivingPrefColumnType(NonExclusiveColumnType):
     def __init__(self, *args, **kwargs):
         self.text_to_num: List[Dict[str, int]] = []
         self.num_to_text: List[Dict[int, str]] = []
+        self.weights: Dict[str, float] = {}
         self.selected_order: List[List[str]] = []
         super().__init__(*args, **kwargs)
 
-
-# class DataType(enum.Enum):
-#     NAME = "Name/ID"
-#     SCHOOL = "School"
-#     SEX = "Sex"
-#     COUNTRY = "Country"
-#     LIVING_PREF = "Living Preference"
-#     OTHERS = "Others"
-
-
-# MANDATORY_TYPES = [DataType.NAME, DataType.SCHOOL, DataType.SEX, DataType.COUNTRY, DataType.LIVING_PREF]
-# EXCLUSIVE_TYPES = [DataType.NAME, DataType.SCHOOL, DataType.SEX]
 
 class ASAP:
     def __init__(self, filepath):
@@ -115,8 +106,6 @@ class ASAP:
         self.total_students = len(self.students_df)
         self.colnames = list(self.students_df.columns)
         self.col_to_type: Dict[str, ColumnType] = {}
-        # self.type_to_cols: Dict[DataType, List[str]] = {}
-        # self.living_pref_cols = []
 
         self.NAME = ExclusiveColumnType("Name/ID", mandatory=True)
         self.SCHOOL = ExclusiveColumnType("School", mandatory=True)
@@ -138,6 +127,7 @@ class ASAP:
 
         self.col_types_defined = False
         self.living_pref_order_defined = False
+        self.weights_defined = False
         self.options_defined = False
 
     def __str__(self):
@@ -183,25 +173,6 @@ class ASAP:
         for _type in self.COL_TYPES:
             if _type.mandatory and not _type.defined:
                 raise ValueError(f"You did not select any columns for '{_type.desc}'. Please try again.")
-        # self.col_to_type = {col: DataType(_type) for col, _type in col_to_type.items()}
-        # self.type_to_cols = {_type: [col for col, __type in self.col_to_type.items() if _type == __type]
-        #                      for _type in DataType}
-        # self.living_pref_cols = [col for col, _type in self.col_to_type.items() if _type is DataType.LIVING_PREF]
-
-        # Check that all mandatory types have corresponding columns
-        # types_without_cols = [_type.value for _type in MANDATORY_TYPES if not self.type_to_cols[_type]]
-        # if types_without_cols:
-        #     raise ValueError(f"""The following data types do not have corresponding columns: """
-        #                      f""""{'", "'.join(types_without_cols)}". """
-        #                      f"""Please select the correct types again.""")
-
-        # Check that only one column for each type (except country and living preference)
-        # exclusive_types_with_multiple_cols = [_type.value for _type in EXCLUSIVE_TYPES if len(self.type_to_cols[_type]) > 1]
-        # if exclusive_types_with_multiple_cols:
-        #     raise ValueError(f"""The following data types have more than one columns: """
-        #                      f""""{'", "'.join(exclusive_types_with_multiple_cols)}". """
-        #                      f"""Please make sure these types are only selected once.""")
-
         # Check that Sex is just M and F
         self.students_df[self.SEX.col] = self.students_df[self.SEX.col].str.upper()
         for value in self.students_df[self.SEX.col].unique():
@@ -231,11 +202,29 @@ class ASAP:
         self.LIVING_PREF.text_to_num = [{value: i for i, value in enumerate(col)} for col in selected_order]
         self.LIVING_PREF.num_to_text = [{i: value for i, value in enumerate(col)} for col in selected_order]
 
+        # for col, text_to_num in zip(self.LIVING_PREF.cols, self.LIVING_PREF.text_to_num):
+        #     self.students_df[col] = self.students_df[col].map(text_to_num)
+
         self.living_pref_order_defined = True
+
+    def set_weights(self, weights):
+        if not self.living_pref_order_defined:
+            raise ValueError("self.living_pref_order(selected_order) MUST be called first")
+
+        total = sum(weights.values())
+        if total != 100:
+            raise ValueError(f"Sum of weights should be exactly 100%. Currently it is {total}%")
+
+        self.LIVING_PREF.weights = {col: weight / 100 for col, weight in weights.items()}
+
+        self.weights_defined = True
 
     def set_options(self, saga, elm, cendana):
         if not self.living_pref_order_defined:
             raise ValueError("self.living_pref_order(selected_order) MUST be called first")
+
+        if not self.weights_defined:
+            raise ValueError("self.set_weights(weights) MUST be called first")
 
         self.avail_suites_saga = saga
         self.avail_suites_elm = elm

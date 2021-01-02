@@ -24,7 +24,7 @@
                     <tr>
                         <th scope="row">{{ i }}</th>
                         {% for value in row %}
-                            <td>{{ value | truncate(30) }}</td>
+                            <td>{{ value | string | truncate(30) }}</td>
                         {% endfor %}
                     </tr>
                 {% endfor %}
@@ -55,6 +55,7 @@
         {% for col in living_prefs %}
         <div class="mb-4">
             <p class="fw-bold">Living Preference {{ loop.index }}: "{{ col }}"</p>
+            <p>Weightage: <strong>{{ weights[col] }}%</strong></p>
             <small class="mb-2">You have chosen the values to be sorted in this order:</small>
             <ol>
                 {% for value in living_pref_order[loop.index0] %}
