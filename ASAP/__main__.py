@@ -201,6 +201,7 @@ class ASAP:
         self.LIVING_PREF.selected_order = selected_order
         self.LIVING_PREF.text_to_num = [{value: i for i, value in enumerate(col)} for col in selected_order]
         self.LIVING_PREF.num_to_text = [{i: value for i, value in enumerate(col)} for col in selected_order]
+        self.set_max_scores()
 
         # for col, text_to_num in zip(self.LIVING_PREF.cols, self.LIVING_PREF.text_to_num):
         #     self.students_df[col] = self.students_df[col].map(text_to_num)
@@ -215,14 +216,12 @@ class ASAP:
         if total != 100:
             raise ValueError(f"Sum of weights should be exactly 100%. Currently it is {total}%")
 
-        self.LIVING_PREF.weights = {col: weight / 100 for col, weight in weights.items()}
+        self.LIVING_PREF.weights = weights
+        scoring.Scores.set_weights({col: weight / 100 for col, weight in weights.items()})
 
         self.weights_defined = True
 
     def set_options(self, saga, elm, cendana):
-        if not self.living_pref_order_defined:
-            raise ValueError("self.living_pref_order(selected_order) MUST be called first")
-
         if not self.weights_defined:
             raise ValueError("self.set_weights(weights) MUST be called first")
 
@@ -243,7 +242,61 @@ class ASAP:
         self.options_defined = True
 
     def run_allocation(self):
+        female_students, male_students = self.add_students()
+        female_suites = allocate_suites(female_students, "Female")
+        male_suites = allocate_suites(male_students, "Male")
+        rca_match = match.RCAMatch(female_suites, male_suites, saga=16, elm=16, cendana=16)
+        rca_match.run_match()
         time.sleep(5)
+
+    def set_max_scores(self):
+        unique_options = {col: list(val_dict)
+                          for col, val_dict in zip(self.LIVING_PREF.cols, self.LIVING_PREF.num_to_text)}
+        scoring.Scores.set_max_scores(unique_options)
+
+    def add_students(self):
+        """Creates StudentData objects based on student data from a Pandas DataFrame.
+
+        Args:
+            students_df: A Pandas DataFrame containing student data.
+
+        Returns:
+            Two lists containing StudentData objects, one list for female students and one list for male students.
+        """
+        female_students = []
+        male_students = []
+        for i in range(len(self.students_df)):
+            # Gathers data for one student in a dictionary that maps variable names to the values
+            new_student = StudentData(name=self.students_df.loc[i, self.NAME.col],
+                                      sex=self.students_df.loc[i, self.SEX.col],
+                                      school=self.students_df.loc[i, self.SCHOOL.col],
+                                      country=[self.students_df.loc[i, col] for col in self.COUNTRY.cols if col],
+                                      living_prefs={col: self.LIVING_PREF.text_to_num[j][self.students_df.loc[i, col]]
+                                                    for j, col in enumerate(self.LIVING_PREF.cols)},
+                                      others={col: self.students_df.loc[i, col] for col in self.OTHERS.cols})
+            sex = self.students_df.loc[i, self.SEX.col]
+            if sex == "F":
+                female_students.append(new_student)
+            elif sex == "M":
+                male_students.append(new_student)
+            else:
+                raise ValueError(f"Unrecognised sex: {sex}")
+        return female_students, male_students
+
+    def allocate_suites(self, students, name):
+        allocations = {}
+        for i in range(20):
+            suite_allocation = SuiteAllocation(students, name)
+            suite_allocation.match()
+            global_score = suite_allocation.global_score()
+            allocated_suites = suite_allocation.get_allocation()
+            print(f"Global score: {global_score}")
+            allocations[global_score] = allocated_suites
+        final_score = max(allocations)
+        allocated_suites = allocations[final_score]
+        print(f"\nFinal score: {final_score}\n")
+        parser.generate_temp_results(allocated_suites, f"output/{name}_suites.csv")
+        return allocated_suites
 
 
 def main():

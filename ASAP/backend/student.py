@@ -6,6 +6,7 @@
 """
 
 import enum
+from typing import Dict, List, Any
 
 
 class Citizenship(enum.Enum):
@@ -22,7 +23,7 @@ class StudentData:
     """Contains information about a student's demographic and preferences
 
     Attributes:
-        matric: A string representing the student's Matric/ID
+        name: A string representing the student's Matric/ID
         sex: A Sex enumeration representing the student's sex (either M or F)
         country: A string representing the student's country
         school: A string representing the student's school
@@ -34,22 +35,15 @@ class StudentData:
         citizenship: An Citizenship enumeration representing whether a student is LOCAL or INTERNATIONAL
     """
 
-    def __init__(self, *, matric, sex, country, school, gender_pref,
-                 sleep_pref, suite_pref, cleanliness_pref, alcohol_pref):
+    def __init__(self, *, name, sex, country, school, living_prefs, others):
         """Initialises a StudentData object"""
-        self.matric = matric
+        self.matric = name
         self.sex = Sex(sex)
-        self.country = country
         self.school = school
-        self.gender_pref = gender_pref
-        self.sleep_pref = sleep_pref
-        self.suite_pref = suite_pref
-        self.cleanliness_pref = cleanliness_pref
-        self.alcohol_pref = alcohol_pref
-        if self.country == "Singapore":
-            self.citizenship = Citizenship.LOCAL
-        else:
-            self.citizenship = Citizenship.INTERNATIONAL
+        self.country: List[str] = country
+        self.living_prefs: Dict[str, int] = living_prefs
+        self.others: Dict[str, Any] = others
+        self.citizenship = Citizenship.LOCAL if "Singapore" in self.country else Citizenship.INTERNATIONAL
 
     def __repr__(self):
         return self.matric
@@ -62,6 +56,5 @@ class StudentData:
 
         Use this to print information about a student, when the string representation of the object is not sufficient.
         """
-        attributes = str([self.sex, self.country, self.citizenship, self.school, self.gender_pref,
-                          self.sleep_pref, self.suite_pref, self.cleanliness_pref, self.alcohol_pref])
+        attributes = str([self.sex, self.country, self.citizenship, self.school, self.living_prefs, self.others])
         return f"{self.matric}: {attributes}"
