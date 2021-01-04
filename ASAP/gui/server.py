@@ -25,6 +25,7 @@ CURRENT_FILENAME = inspect.getframeinfo(inspect.currentframe()).filename
 CURRENT_PATH = os.path.dirname(os.path.abspath(CURRENT_FILENAME))
 UPLOAD_PATH = os.path.join(CURRENT_PATH, UPLOAD_FOLDER)
 PICKLE_FILEPATH = os.path.join(UPLOAD_PATH, "asap_temp_storage.pickle")
+WINDOW = webview.create_window('ASAP: Automated Suite Allocation Program for Yale-NUS First-Years', app)
 
 
 def allowed_file(filename, allowed_extensions):
@@ -227,12 +228,16 @@ def run_allocation():
 def results():
     error_msg = None
     asap_obj = restore_pickle()
+    if request.method == 'POST':
+        folder_path = WINDOW.create_file_dialog(webview.FOLDER_DIALOG, directory='/')
+        asap_obj.export_files(folder_path[0])
+        save_pickle(asap_obj)
+        return redirect(url_for("results"))
     return render_template('results.html',
                            error_msg=error_msg)
 
 
 def main():
-    webview.create_window('ASAP: Automated Suite Allocation Program for Yale-NUS First-Years', app)
     webview.start(debug=True)
 
 
