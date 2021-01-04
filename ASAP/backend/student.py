@@ -35,8 +35,9 @@ class StudentData:
         citizenship: An Citizenship enumeration representing whether a student is LOCAL or INTERNATIONAL
     """
 
-    def __init__(self, *, name, sex, country, school, living_prefs, others):
+    def __init__(self, *, index, name, sex, country, school, living_prefs, others):
         """Initialises a StudentData object"""
+        self.index = index
         self.matric = name
         self.sex = Sex(sex)
         self.school = school

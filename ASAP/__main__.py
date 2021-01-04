@@ -34,9 +34,11 @@ TODO: Check correctness of code (.copy()?)
 
 import sys
 import os
+import inspect
 import collections
-import time
+import datetime
 import math
+import random
 from typing import Dict, List, Tuple
 
 import pandas as pd
@@ -125,10 +127,14 @@ class ASAP:
         self.num_males = 0
         self.num_females = 0
 
+        self.female_suites = None
+        self.male_suites = None
+
         self.col_types_defined = False
         self.living_pref_order_defined = False
         self.weights_defined = False
         self.options_defined = False
+        self.allocation_completed = False
 
     def __str__(self):
         return f"<ASAP object>"
@@ -243,11 +249,14 @@ class ASAP:
 
     def run_allocation(self):
         female_students, male_students = self.add_students()
-        female_suites = allocate_suites(female_students, "Female")
-        male_suites = allocate_suites(male_students, "Male")
-        rca_match = match.RCAMatch(female_suites, male_suites, saga=16, elm=16, cendana=16)
+        self.female_suites = self.allocate_suites(female_students, "Female")
+        self.male_suites = self.allocate_suites(male_students, "Male")
+        rca_match = match.RCAMatch(self.female_suites, self.male_suites,
+                                   saga=self.avail_suites_saga,
+                                   elm=self.avail_suites_elm,
+                                   cendana=self.avail_suites_cendana)
         rca_match.run_match()
-        time.sleep(5)
+        self.allocation_completed = True
 
     def set_max_scores(self):
         unique_options = {col: list(val_dict)
@@ -267,7 +276,8 @@ class ASAP:
         male_students = []
         for i in range(len(self.students_df)):
             # Gathers data for one student in a dictionary that maps variable names to the values
-            new_student = StudentData(name=self.students_df.loc[i, self.NAME.col],
+            new_student = StudentData(index=i,
+                                      name=self.students_df.loc[i, self.NAME.col],
                                       sex=self.students_df.loc[i, self.SEX.col],
                                       school=self.students_df.loc[i, self.SCHOOL.col],
                                       country=[self.students_df.loc[i, col] for col in self.COUNTRY.cols if col],
@@ -295,8 +305,90 @@ class ASAP:
         final_score = max(allocations)
         allocated_suites = allocations[final_score]
         print(f"\nFinal score: {final_score}\n")
-        parser.generate_temp_results(allocated_suites, f"output/{name}_suites.csv")
         return allocated_suites
+
+    def export_files(self, folder_path):
+        if not self.allocation_completed:
+            raise ValueError("self.run_allocation() MUST be called first")
+
+        def filepath(filename):
+            return os.path.join(folder_path, filename)
+
+        self.generate_suite_results(self.female_suites, filepath("female_suites.csv"))
+        self.generate_suite_results(self.male_suites, filepath("male_suites.csv"))
+
+        suites = []
+        unmatched_male_suites = []
+        while self.male_suites:
+            male_suite = self.male_suites.pop()
+            for female_suite in self.female_suites:
+                if male_suite.rca == female_suite.rca != "Unallocated":
+                    self.female_suites.remove(female_suite)
+                    suites.append(female_suite)
+                    suites.append(male_suite)
+                    break
+            else:
+                unmatched_male_suites.append(male_suite)
+        suites.extend(self.female_suites)
+        suites.extend(unmatched_male_suites)
+
+        self.generate_suite_results(suites, filepath("rca_groups.csv"))
+        self.generate_masterlist(suites, filepath("masterlist.csv"))
+
+    def generate_suite_results(self, suites, csv_path):
+        """
+        Temporary function to generate results for an allocation
+
+        Args:
+            suites:
+            csv_path:
+        """
+        suite_living_prefs = {
+            k: v
+            for i, living_pref in enumerate(self.LIVING_PREF.cols)
+            for k, v in {
+                f"Living Pref: {living_pref}": [[self.LIVING_PREF.num_to_text[i][student.living_prefs[living_pref]]
+                                                 for student in suite.students]
+                                                for suite in suites],
+                living_pref: [[student.living_prefs[living_pref]
+                               for student in suite.students]
+                              for suite in suites],
+                f"Score: {living_pref}": [scoring.living_pref_score(suite.students, living_pref, higher_better=True)
+                                          for suite in suites]
+            }.items()
+        }
+        suite_data = {
+            "Suite": [repr(suite) for suite in suites],
+            "RC": [suite.rc for suite in suites],
+            "RCA": [suite.rca for suite in suites],
+            "Num_students": [len(suite.students) for suite in suites],
+            "Countries": [[student.country for student in suite.students] for suite in suites],
+            "Citizenship Diversity": [scoring.citizenship_diversity_score(suite.students) for suite in suites],
+            "Country Diversity": [scoring.country_diversity_score(suite.students) for suite in suites],
+            "Schools": [[student.school for student in suite.students] for suite in suites],
+            "School Diversity": [scoring.school_diversity_score(suite.students) for suite in suites],
+            **suite_living_prefs,
+            "Demographic Score": [scoring.demographic_scores(suite.students) for suite in suites],
+            "Living Pref Score": [scoring.living_pref_scores(suite.students, higher_better=True) for suite in suites],
+            "Final Score": [scoring.calculate_success(suite.students) for suite in suites]
+        }
+        suites_df = pd.DataFrame(suite_data, columns=list(suite_data.keys()))
+        suites_df.to_csv(csv_path, index=False)
+
+    def generate_masterlist(self, suites, csv_path):
+        students = [student for suite in suites for student in random.sample(suite.students, len(suite.students))]
+        df = self.students_df.reindex(student.index for student in students)
+        CURRENT_YEAR = datetime.datetime.now().year
+        num_students = len(students)
+        df = df.assign(Suite=[student.current_choice.suite_num for student in students],
+                       Room=["TBC" for _ in range(num_students)],
+                       RC=[student.current_choice.rc for student in students],
+                       RCA=[student.current_choice.rca for student in students],
+                       Admit=[CURRENT_YEAR for _ in range(num_students)],
+                       Class=[CURRENT_YEAR + 4 for _ in range(num_students)],
+                       Student_Type=["First-Year" for _ in range(num_students)],
+                       Unofficial_Residency=[student.citizenship.value for student in students], )
+        df.to_csv(csv_path, index=False)
 
 
 def main():

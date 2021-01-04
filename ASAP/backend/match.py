@@ -2,6 +2,7 @@ import collections
 import random
 
 from ASAP.backend import scoring
+from ASAP.backend.student import StudentData
 
 
 class SuiteRound:
@@ -10,14 +11,14 @@ class SuiteRound:
             scores: A dictionary mapping suite objects to the score given to that suite combined with the student
             ranking: A list that contains suite objects. The order represents the student's preference
         """
-        def __init__(self, student_data):
+        def __init__(self, student_data: StudentData):
             self.data = student_data
             self.scores = {}
             self.ranking = None
             self.current_choice = None
 
-        def __getattr__(self, attr):
-            return getattr(self.data, attr)
+        # def __getattr__(self, attr):
+        #     return getattr(self.data, attr)
 
         @property
         def suite(self):
@@ -50,8 +51,8 @@ class SuiteRound:
             self.ranking = None
             self.current_choice = None
 
-        def __getattr__(self, attr):
-            return getattr(self.suite, attr)
+        # def __getattr__(self, attr):
+        #     return getattr(self.suite, attr)
 
         def add_student(self, student):
             if student:
