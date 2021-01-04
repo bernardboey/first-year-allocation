@@ -3,9 +3,9 @@ import inspect
 import pickle
 import shutil
 import json
+import time
 
 from flask import Flask, request, render_template, redirect, url_for
-from werkzeug.utils import secure_filename
 import webview
 
 from ASAP.__main__ import ASAP, LivingPrefColumnType
@@ -15,7 +15,7 @@ from ASAP.__main__ import ASAP, LivingPrefColumnType
 # https://flask.palletsprojects.com/en/1.1.x/patterns/fileuploads/
 # https://github.com/r0x0r/pywebview/tree/master/examples/flask_app
 
-app = Flask(__name__, static_folder='./static', template_folder='./templates')
+app = Flask(__name__, static_folder='./static', template_folder='./templates')  # TODO: Change bootstrap to local
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1  # disable caching
 UPLOAD_FOLDER = 'tmp'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -28,19 +28,9 @@ PICKLE_FILEPATH = os.path.join(UPLOAD_PATH, "asap_temp_storage.pickle")
 WINDOW = webview.create_window('ASAP: Automated Suite Allocation Program for Yale-NUS First-Years', app)
 
 
-def allowed_file(filename, allowed_extensions):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
-
-
-def remove_and_delete_dir(path):
-    try:
-        shutil.rmtree(path)
-    except FileNotFoundError:
-        pass
-    os.makedirs(path)
-
-
 def save_pickle(obj):
+    if not os.path.exists(UPLOAD_PATH):
+        os.makedirs(UPLOAD_PATH)
     with open(PICKLE_FILEPATH, "wb") as f:
         pickle.dump(obj, f)
 
@@ -52,19 +42,11 @@ def restore_pickle() -> ASAP:
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
-    error_msg = None
     if request.method == 'POST':
-        file = request.files['csv_file']
-        if file and allowed_file(file.filename, {'csv'}):
-            filename = secure_filename(file.filename)
-            remove_and_delete_dir(UPLOAD_PATH)
-            filepath = os.path.join(UPLOAD_PATH, filename)
-            file.save(filepath)
-            save_pickle(ASAP(filepath))
-            return redirect(url_for("select_column_type"))
-        else:
-            error_msg = "Only .csv files accepted"
-    return render_template('index.html', error_msg=error_msg)
+        filepath = WINDOW.create_file_dialog(webview.OPEN_DIALOG, directory='/', file_types=('CSV Files (*.csv)', ))
+        save_pickle(ASAP(filepath[0]))
+        return redirect(url_for("select_column_type"))
+    return render_template('index.html')
 
 
 @app.route('/select_column_type', methods=['GET', 'POST'])
@@ -92,7 +74,6 @@ def select_column_type():
                                    asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.OTHERS)):
             selected_values[f"column{i}"] = _type.desc
         # END OF BLOCK #
-
     return render_template('select_column_type.html',
                            csv_filename=asap_obj.filename,
                            coltypes=[e.desc for e in asap_obj.COL_TYPES],
