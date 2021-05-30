@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Results{% endblock %}
+{% block content %}
+    <div class="text-start mt-2">
+        <a class="btn btn-secondary py-0" href="{{ url_for('run_allocation') }}"><strong>&#x2190;</strong> Back</a>
+    </div>
+
+    <h1>Allocation Results</h1>
+
+    {% if error_msg %}
+        <div class="alert alert-danger text-start mb-4">
+            <p class="fw-bold">ERROR</p>
+            <p class="mb-0">{{ error_msg }}</p>
+        </div>
+    {% endif %}
+
+    <div class="text-start mt-4">
+        <h2 class="mb-3">First-Year Suite Allocation</h2>
+        <p>
+            Date & Time: {{ datetime }}<br>
+            CSV File: {{ csv_filename }}
+        </p>
+        <h3>Suite Statistics</h3>
+        <div class="alert alert-info py-2" role="alert">
+            Note: The following numbers exclude students that are allocated to gender neutral suites.
+        </div>
+        <p class="fw-bold mb-1">Total Students: {{ total_students }}</p>
+        <p>
+            No. of Males: {{ num_males }}<br>
+            No. of Females: {{ num_females }}
+        </p>
+        <p class="fw-bold mb-1">Total Suites Available: {{ total_suites }}</p>
+        <p>
+            Saga: {{ avail_suites_saga }}<br>
+            Elm: {{ avail_suites_elm }}<br>
+            Cendana: {{ avail_suites_cendana }}
+        </p>
+        <p class="fw-bold mb-3">Used Suites: {{ used_suites }} / {{ total_suites }}</p>
+        <div class="text-start">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    {% for rc in rc_list %}
+                        <th scope="col">{{ rc }}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <th scope="row">Females</th>
+                    {% for rc in rc_list %}
+                        <td>{{ female_stats[rc][0] }} ({{ female_stats[rc][1] }} suites)</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <th scope="row">Males</th>
+                    {% for rc in rc_list %}
+                        <td>{{ male_stats[rc][0] }} ({{ male_stats[rc][1] }} suites)</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <th scope="row">Total</th>
+                    {% for rc in rc_list %}
+                        <td>{{ female_stats[rc][0] + male_stats[rc][0] }} ({{ female_stats[rc][1] + male_stats[rc][1] }} suites)</td>
+                    {% endfor %}
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="alert alert-info py-2" role="alert">
+            Note that the allocated RCs are just a rough guide and should be tweaked depending on the desired
+            arrangement.
+        </div>
+
+        <hr class="mt-4 mb-3">
+        <h3>Allocation Process</h3>
+        <p class="mb-4">The first-years were allocated into suites based on <strong>demographics (country and school)</strong> and
+            <strong>{{ num_living_prefs }} living preferences</strong>. Males and females were separated and allocated to single-sex suites.</p>
+        <h4>Demographics</h4>
+
+        <p>More info to be included in the future. For now, conduct your own analysis from the generated masterlist.</p>
+
+        <h4>Living Preferences</h4>
+        {% for col in living_prefs %}
+            <div class="mb-4">
+                <p class="fw-bold">Living Preference {{ loop.index }}: "{{ col }}"</p>
+                <p>Weightage: <strong>{{ weights[col] }}%</strong></p>
+                <small class="mb-2">The values were sorted in this order:</small>
+                <ol>
+                    {% for value in living_pref_order[loop.index0] %}
+                        <li>{{ value }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        {% endfor %}
+        <p>Suites were paired into RCA groups based on a similar process as described above.</p>
+
+    </div>
+    <form action="" method="post" enctype="multipart/form-data" class="text-start" id="export-form">
+
+        <div class="mb-2 text-center">
+            <button type="submit" class="btn btn-primary">Export Masterlist</button>
+        </div>
+    </form>
+{% endblock %}

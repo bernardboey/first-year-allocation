@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Completed{% endblock %}
+{% block content %}
+    <div class="text-start mt-2">
+        <a class="btn btn-secondary py-0" href="{{ url_for('results') }}"><strong>&#x2190;</strong> Back</a>
+    </div>
+
+    <h1>Masterlist Exported!</h1>
+
+    <div class="text-start mt-4">
+        <p>
+            The masterlist and other files have been exported. You may now close this window. More info on each of the files:
+        </p>
+        <ul>
+            <li><strong>"masterlist.csv"</strong>: A CSV file containing the list of first year students, their demographics, living preferences, <strong>suite allocation, RCA group allocation and RC allocation</strong>.</li>
+        </ul>
+        <p>
+            The rest are just for info/analysis:
+        </p>
+        <ul>
+            <li>"male_suites.csv": A CSV file containing the list of male suites, where the demographics and living preferences are summarised together for each suite, for easy comparison and evaluation.</li>
+            <li>"female_suites.csv": The same as above but for female suites.</li>
+            <li>"rca_groups.csv": A CSV file containing the list of both male suites and female suites, ordered and grouped by the RCA groups (each containing 1 male and 1 female suite). This is essentially a combination of the previous two files, but allowing the user to view it based on RCA groups.</li>
+            <li>"allocation_report.html": A HTML file of the previous page (results of allocation).</li>
+        </ul>
+    </div>
+    <a href="https://github.com/bernardboey/first-year-allocation/wiki" target="_blank" class="btn btn-secondary"
+       type="button">More Info</a>
+{% endblock %}
