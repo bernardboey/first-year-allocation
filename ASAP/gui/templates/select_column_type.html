@@ -6,9 +6,9 @@
     </div>
 
     <h1>Select Column Data Type</h1>
-    <p class="text-start fw-bold mt-4">{{ csv_filename }}</p>
+    <p class="text-start mt-4"><i>CSV File: <strong>{{ csv_filename }}</strong></i></p>
     <div class="text-start">
-        <table class="table">
+        <table class="table" style="font-size: 0.8rem;">
             <thead>
             <tr>
                 <th scope="col">#</th>
@@ -30,8 +30,28 @@
         </table>
     </div>
     <a id="select-column">
-        <div class="alert alert-primary mt-4 mb-3">
-            <h5 class="mb-0">For each column, please select the kind of data that it represents</h5>
+        <div class="alert alert-primary mt-4 mb-4">
+            <h5 class="mb-3">For each column, please select the kind of data that it represents</h5>
+            <ul class="text-start mb-0">
+                <li><strong>Student ID</strong> (only 1 column): Matric number / unique identifier for each student. Student names can be used instead
+                    but must be unique.
+                </li>
+                <li><strong>School</strong> (only 1 column): High school name / unique identifier for each high school. Schools must have the same exact
+                    spelling / identifier throughout or they will be treated as different schools.
+                </li>
+                <li><strong>Sex</strong> (only 1 column): Column must be "M" or "F".</li>
+                <li><strong>Country</strong> (unlimited no. of columns): Column must be "Singapore", "United States", etc. Countries must have the same exact
+                    spelling throughout or they will be treated as different countries. (E.g. "Korea, South" and "South
+                    Korea" will be treated as two different countries)
+                </li>
+                <li><strong>Living Preferences</strong> (unlimited no. of columns): Each question must be multiple choice, and must be <a
+                        href="https://en.wikipedia.org/wiki/Ordinal_data" target="_blank">ordinal</a>). As before, the
+                    options must have the same exact spelling or they will be treated as different options.
+                </li>
+                <li><strong>Others</strong> (unlimited no. of columns): All other columns which are not to be used as a living preference for the allocation
+                    algorithm.
+                </li>
+            </ul>
         </div>
     </a>
     {% if error_msg %}
@@ -44,7 +64,11 @@
           enctype="multipart/form-data" class="text-start">
         {% for col in colnames %}{% set outer_loop = loop %}
             <div class="mb-4">
-                <label for="column{{ loop.index0 }}" class="form-label fw-bold mb-0">{{ col }}</label>
+                <label for="column{{ loop.index0 }}" class="form-label mb-0" style="line-height: 1.2;">
+                    <small style="font-size: 0.75rem; color: #777777;">Column:</small>
+                    <br>
+                    <strong>{{ col }}</strong>
+                </label>
                 <div class="form-text mb-1">
                     {{ unique_values[loop.index0][:10] }}
                     {% if unique_values[loop.index0] | length > 10 %}
@@ -52,7 +76,8 @@
                     {% endif %}
                 </div>
                 <select id="column{{ loop.index0 }}" name="column{{ loop.index0 }}" class="form-select"
-                        aria-label="Select column type for {{ col }}">
+                        aria-label="Select column type for {{ col }}" required>
+                        <option selected disabled value="">--- Select Data Type ---</option>
                     {% for coltype in coltypes %}
                         <option value="{{ coltype }}"
                                 {% if request.form["column" ~ outer_loop.index0] == coltype or selected_values["column" ~ outer_loop.index0] == coltype %}

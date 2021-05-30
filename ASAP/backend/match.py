@@ -37,7 +37,7 @@ class SuiteRound:
             if suite_matchee in self.scores:
                 return self.scores[suite_matchee]
             else:
-                score = scoring.calculate_score(suite_matchee.suite, self.data)
+                score = scoring.calculate_score(suite_matchee.data, self)
                 suite_matchee.scores[self] = score
                 return score
 
@@ -46,23 +46,20 @@ class SuiteRound:
 
     class SuiteMatchee:
         def __init__(self, suite):
-            self.suite = suite
+            self.data = suite
             self.scores = {}
             self.ranking = None
             self.current_choice = None
 
-        # def __getattr__(self, attr):
-        #     return getattr(self.suite, attr)
-
         def add_student(self, student):
             if student:
-                self.suite.add_student(student)
+                self.data.add_student(student)
 
         def generate_score(self, student_matchee):
             if student_matchee in self.scores:
                 return self.scores[student_matchee]
             else:
-                score = scoring.calculate_score(self.suite, student_matchee.data)
+                score = scoring.calculate_score(self.data, student_matchee)
                 student_matchee.scores[self] = score
                 return score
 
@@ -109,6 +106,9 @@ class RCAMatch:
         self.saga = saga
         self.elm = elm
         self.cendana = cendana
+        if saga + elm + cendana < len(self.female_suites) + len(self.male_suites):
+            raise ValueError("Not enough suites.")
+
 
     class Matchee:
         def __init__(self, suite):
@@ -116,9 +116,6 @@ class RCAMatch:
             self.scores = {}
             self.ranking = None
             self.current_choice = None
-
-        def __getattr__(self, attr):
-            return getattr(self.data, attr)
 
         def generate_score(self, suite_matchee):
             if suite_matchee in self.scores:
@@ -149,29 +146,28 @@ class RCAMatch:
                 suite.data.rca = "Unallocated"
                 suite.data.rc = "Unallocated"
             else:
-                rc = self.get_rc(suite, suite.current_choice)
+                rc = self.get_rc()
                 suite.data.rc = rc
                 suite.current_choice.data.rc = rc
                 suite.current_choice.data.rca = f"RCA {i:02d}"
                 suite.data.rca = f"RCA {i:02d}"
                 i += 1
 
-    def get_rc(self, suite, sibling_suite):
-        # SPECIAL CASE
-        student_names = [student.matric for student in sibling_suite.students] + [student.matric for student in suite.students]
-        if "UC1" in student_names:
-            return "Cendana"
-        if self.saga >= 2:
-            self.saga -= 2
-            return "Saga"
-        elif self.elm >= 2:
-            self.elm -= 2
-            return "Elm"
-        elif self.cendana >= 2:
-            self.cendana -= 2
-            return "Cendana"
-        else:
-            raise RuntimeError("Not enough suites.")
+    def get_rc(self):
+        i = random.randint(1, 3)
+        if i == 1:
+            if self.saga >= 2:
+                self.saga -= 2
+                return "Saga"
+        elif i == 2:
+            if self.elm >= 2:
+                self.elm -= 2
+                return "Elm"
+        elif i == 3:
+            if self.cendana >= 2:
+                self.cendana -= 2
+                return "Cendana"
+        return self.get_rc()
 
 
 def gale_shapley(proposers):

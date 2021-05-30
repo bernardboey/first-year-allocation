@@ -25,7 +25,8 @@ CURRENT_FILENAME = inspect.getframeinfo(inspect.currentframe()).filename
 CURRENT_PATH = os.path.dirname(os.path.abspath(CURRENT_FILENAME))
 UPLOAD_PATH = os.path.join(CURRENT_PATH, UPLOAD_FOLDER)
 PICKLE_FILEPATH = os.path.join(UPLOAD_PATH, "asap_temp_storage.pickle")
-WINDOW = webview.create_window('ASAP: Automated Suite Allocation Program for Yale-NUS First-Years', app)
+WINDOW = webview.create_window('ASAP: Automated Suite Allocation Program for Yale-NUS First-Years', app,
+                               width=1200, height=800, text_select=True)
 
 
 def save_pickle(obj):
@@ -42,11 +43,16 @@ def restore_pickle() -> ASAP:
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
+    error_msg = None
     if request.method == 'POST':
-        filepath = WINDOW.create_file_dialog(webview.OPEN_DIALOG, directory='/', file_types=('CSV Files (*.csv)', ))
-        save_pickle(ASAP(filepath[0]))
-        return redirect(url_for("select_column_type"))
-    return render_template('index.html')
+        filepath = WINDOW.create_file_dialog(webview.OPEN_DIALOG, directory='/', file_types=('CSV Files (*.csv)',))
+        if filepath:
+            try:
+                save_pickle(ASAP(filepath[0]))
+                return redirect(url_for("select_column_type"))
+            except ValueError as e:
+                error_msg = str(e)
+    return render_template('index.html', error_msg=error_msg)
 
 
 @app.route('/select_column_type', methods=['GET', 'POST'])
@@ -70,9 +76,10 @@ def select_column_type():
                 selected_values[f"column{i}"] = _type.desc
 
         # TEMPORARILY HERE TO SPEED UP DEVELOPMENT #
-        for i, _type in enumerate((asap_obj.NAME, asap_obj.SCHOOL, asap_obj.SEX, asap_obj.COUNTRY, asap_obj.LIVING_PREF,
-                                   asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.OTHERS)):
-            selected_values[f"column{i}"] = _type.desc
+        # for i, _type in enumerate((asap_obj.ID, asap_obj.OTHERS, asap_obj.SEX, asap_obj.SCHOOL, asap_obj.COUNTRY,
+        #                            asap_obj.OTHERS, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF,
+        #                            asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF)):
+        #     selected_values[f"column{i}"] = _type.desc
         # END OF BLOCK #
     return render_template('select_column_type.html',
                            csv_filename=asap_obj.filename,
@@ -139,7 +146,7 @@ def select_options():
         elm = asap_obj.avail_suites_elm
         cendana = asap_obj.avail_suites_cendana
     else:
-        saga, elm, cendana = 16, 16, 16
+        saga, elm, cendana = 14, 14, 14
     if request.method == 'POST':
         saga = int(request.form["saga-suites"])
         elm = int(request.form["elm-suites"])
@@ -209,13 +216,42 @@ def run_allocation():
 def results():
     error_msg = None
     asap_obj = restore_pickle()
+    context = {
+        "datetime": asap_obj.datetime,
+        "csv_filename": asap_obj.filename,
+        "total_students": asap_obj.total_students,
+        "num_males": asap_obj.num_males,
+        "num_females": asap_obj.num_females,
+        "avail_suites_saga": asap_obj.avail_suites_saga,
+        "avail_suites_elm": asap_obj.avail_suites_elm,
+        "avail_suites_cendana": asap_obj.avail_suites_cendana,
+        "total_suites": asap_obj.total_suites,
+        "used_suites": len(asap_obj.suites),
+        "rc_list": asap_obj.RC_LIST,
+        "female_stats": asap_obj.female_stats,
+        "male_stats": asap_obj.male_stats,
+        "num_living_prefs": len(asap_obj.LIVING_PREF.cols),
+        "living_prefs": asap_obj.LIVING_PREF.cols,
+        "living_pref_order": asap_obj.LIVING_PREF.selected_order,
+        "weights": asap_obj.LIVING_PREF.weights
+    }
     if request.method == 'POST':
         folder_path = WINDOW.create_file_dialog(webview.FOLDER_DIALOG, directory='/')
-        asap_obj.export_files(folder_path[0])
-        save_pickle(asap_obj)
-        return redirect(url_for("results"))
-    return render_template('results.html',
-                           error_msg=error_msg)
+        if folder_path:
+            try:
+                asap_obj.export_files(folder_path[0])
+                save_pickle(asap_obj)
+                with open(os.path.join(folder_path[0], "allocation_report.html"), 'w') as f:
+                    f.write(render_template('results.html', **context))
+                return redirect(url_for("completed"))
+            except PermissionError as e:
+                error_msg = f"Please close the following files as the program will need to overwrite them:\n{e}"
+    return render_template('results.html', error_msg=error_msg, **context)
+
+
+@app.route('/completed', methods=['GET'])
+def completed():
+    return render_template('completed.html')
 
 
 def main():

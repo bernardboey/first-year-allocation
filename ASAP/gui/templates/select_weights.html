@@ -27,8 +27,11 @@
     <form action="" method="post" enctype="multipart/form-data" class="text-start">
         {% for col in living_pref_cols %}
             <div class="mb-3">
-                <label for="column{{ loop.index0 }}" class="form-label">Weightage for
-                    <strong>"{{ col }}"</strong></label>
+                <label for="column{{ loop.index0 }}" class="form-label">
+                    <small style="font-size: 0.75rem; color: #777777;">Select weightage for column:</small>
+                    <br>
+                    <strong>{{ col }}</strong>
+                </label>
                 <div class="input-group">
                     <input type="number" class="form-control weightage" id="column{{ loop.index0 }}"
                            name="column{{ loop.index0 }}" value="{{ weights[col] }}" min="0" max="100" required>

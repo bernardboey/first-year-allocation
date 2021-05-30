@@ -7,9 +7,8 @@
 
     <h1>Verify Living Preferences</h1>
     <div class="alert alert-primary mt-4 mb-4">
-        <h5 class="mb-2">For each living preference question, please input the order of the options.</h5>
-        <p class="mb-0">E.g. If there are 4 options, please order them from 0 to 3. It does not matter which 0 and which
-            is 3.</p>
+        <h5 class="mb-2">For each living preference question, please sort the options according to how they should be ordered.</h5>
+        <p class="mb-0">In other words, order them from one end of the spectrum to the other end of the spectrum. It does not matter which is at the top and which is at the bottom.</p>
     </div>
     {% if error_msg %}
         <div class="alert alert-danger text-start mb-4">
@@ -21,7 +20,11 @@
         <input id="living-pref-data" type="hidden" name="living-pref-data" value="" />
         {% for col in living_pref_cols %}{% set col_loop = loop %}
             <div class="mb-5">
-                <label for="column{{ col_loop.index0 }}" class="form-label fw-bold mb-3">{{ col }}</label>
+                <label for="column{{ col_loop.index0 }}" class="form-label mb-3">
+                    <small style="font-size: 0.75rem; color: #777777;">Sort options for column:</small>
+                    <br>
+                    <strong>{{ col }}</strong>
+                </label>
                 <ul class="sortable p-0" style="list-style-type: none;" aria-dropeffect="move">
                     {% for value in unique_values[col_loop.index0] %}{% set val_loop = loop %}
                         <li class="mb-2 text-light p-2"
