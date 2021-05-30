@@ -101,21 +101,25 @@ class LivingPrefColumnType(NonExclusiveColumnType):
 
 
 class ASAP:
+    RC_LIST = ("Saga", "Elm", "Cendana", "Unallocated")
+
     def __init__(self, filepath):
         self.filepath = filepath
         self.filename = os.path.basename(filepath)
         self.students_df = pd.read_csv(filepath)
+        self.verify_csv()
+
         self.total_students = len(self.students_df)
         self.colnames = list(self.students_df.columns)
         self.col_to_type: Dict[str, ColumnType] = {}
 
-        self.NAME = ExclusiveColumnType("Name/ID", mandatory=True)
+        self.ID = ExclusiveColumnType("Student ID", mandatory=True)
         self.SCHOOL = ExclusiveColumnType("School", mandatory=True)
         self.SEX = ExclusiveColumnType("Sex", mandatory=True)
         self.COUNTRY = NonExclusiveColumnType("Country", mandatory=True)
         self.LIVING_PREF = LivingPrefColumnType("Living Preference", mandatory=True)
         self.OTHERS = NonExclusiveColumnType("Others", mandatory=False)
-        self.COL_TYPES = [self.NAME, self.SCHOOL, self.SEX, self.COUNTRY, self.LIVING_PREF, self.OTHERS]
+        self.COL_TYPES = [self.ID, self.SCHOOL, self.SEX, self.COUNTRY, self.LIVING_PREF, self.OTHERS]
 
         self.avail_suites_saga = 0
         self.avail_suites_elm = 0
@@ -129,6 +133,10 @@ class ASAP:
 
         self.female_suites = None
         self.male_suites = None
+        self.suites = None
+        self.female_stats = {}
+        self.male_stats = {}
+        self.datetime = None
 
         self.col_types_defined = False
         self.living_pref_order_defined = False
@@ -141,6 +149,11 @@ class ASAP:
 
     def __repr__(self):
         return f"ASAP({self.filename})"
+
+    def verify_csv(self):
+        if self.students_df.isnull().values.any():
+            raise ValueError(f"Number of missing values: {self.students_df.isnull().sum().sum()}. "
+                             f"Please ensure there are no missing values.")
 
     def get_colnames_and_unique_values(self) -> Tuple[List[str], List[List[str]], List[List[str]]]:
         unique_values: List[List[str]] = [self.students_df[col].value_counts().index.tolist() for col in self.colnames]
@@ -182,23 +195,23 @@ class ASAP:
         # Check that Sex is just M and F
         self.students_df[self.SEX.col] = self.students_df[self.SEX.col].str.upper()
         for value in self.students_df[self.SEX.col].unique():
-            if value not in ("M", "F", "MALE", "FEMALE"):
-                raise ValueError(f"Column that represents sex should only contain 'M' and 'F'. "
+            if value not in ("M", "F"):
+                raise ValueError(f"Column that represents '{self.SEX.desc}' should only contain 'M' and 'F'. "
                                  f"Currently it contains '{value}' as well.")
         self.num_males = len(self.students_df[self.students_df[self.SEX.col] == 'M'])
         self.num_females = len(self.students_df[self.students_df[self.SEX.col] == 'F'])
 
         if "Singapore" not in self.students_df[self.COUNTRY.cols[0]].unique():
             raise ValueError(f"The value 'Singapore' cannot be found in the column you selected for "
-                             f"'Country' (column '{self.COUNTRY.cols[0]}'). Did you identify the columns correctly?")
+                             f"'{self.COUNTRY.desc}' (column '{self.COUNTRY.cols[0]}'). "
+                             f"Did you identify the columns correctly?")
 
-        if not self.students_df[self.NAME.col].is_unique:
-            raise ValueError(f"The column that you selected for 'Name' (column '{self.NAME.col}') contains duplicate "
-                             f"values. Did you identify the columns correctly?")
+        if not self.students_df[self.ID.col].is_unique:
+            raise ValueError(f"The column that you selected for '{self.ID.desc}' (column '{self.ID.col}') "
+                             f"contains duplicate values. Did you identify the columns correctly?")
         self.col_types_defined = True
 
     def set_living_pref_order(self, selected_order: List[List[str]]):
-        # selected_order = [["10pm to 12am", "12am to 2am", "after 2am"], [], [], []]
         if self.living_pref_order_defined:
             pass
         if not self.col_types_defined:
@@ -220,7 +233,7 @@ class ASAP:
 
         total = sum(weights.values())
         if total != 100:
-            raise ValueError(f"Sum of weights should be exactly 100%. Currently it is {total}%")
+            raise ValueError(f"Sum of weights should be exactly 100%. Currently it is {total}%.")
 
         self.LIVING_PREF.weights = weights
         scoring.Scores.set_weights({col: weight / 100 for col, weight in weights.items()})
@@ -256,6 +269,8 @@ class ASAP:
                                    elm=self.avail_suites_elm,
                                    cendana=self.avail_suites_cendana)
         rca_match.run_match()
+        self.suites = self.male_suites + self.female_suites
+        self.calculate_statistics()
         self.allocation_completed = True
 
     def set_max_scores(self):
@@ -277,7 +292,7 @@ class ASAP:
         for i in range(len(self.students_df)):
             # Gathers data for one student in a dictionary that maps variable names to the values
             new_student = StudentData(index=i,
-                                      name=self.students_df.loc[i, self.NAME.col],
+                                      matric=self.students_df.loc[i, self.ID.col],
                                       sex=self.students_df.loc[i, self.SEX.col],
                                       school=self.students_df.loc[i, self.SCHOOL.col],
                                       country=[self.students_df.loc[i, col] for col in self.COUNTRY.cols if col],
@@ -292,6 +307,17 @@ class ASAP:
             else:
                 raise ValueError(f"Unrecognised sex: {sex}")
         return female_students, male_students
+
+    def calculate_statistics(self):
+        self.female_stats = {rc: (0, 0) for rc in self.RC_LIST}
+        self.male_stats = {rc: (0, 0) for rc in self.RC_LIST}
+        for suite in self.female_suites:
+            num_students, num_suites = self.female_stats[suite.rc]
+            self.female_stats[suite.rc] = (len(suite.students) + num_students, 1 + num_suites)
+        for suite in self.male_suites:
+            num_students, num_suites = self.male_stats[suite.rc]
+            self.male_stats[suite.rc] = (len(suite.students) + num_students, 1 + num_suites)
+        self.datetime = datetime.datetime.now().strftime("%d %b %Y %H:%M")
 
     def allocate_suites(self, students, name):
         allocations = {}
@@ -316,24 +342,8 @@ class ASAP:
 
         self.generate_suite_results(self.female_suites, filepath("female_suites.csv"))
         self.generate_suite_results(self.male_suites, filepath("male_suites.csv"))
-
-        suites = []
-        unmatched_male_suites = []
-        while self.male_suites:
-            male_suite = self.male_suites.pop()
-            for female_suite in self.female_suites:
-                if male_suite.rca == female_suite.rca != "Unallocated":
-                    self.female_suites.remove(female_suite)
-                    suites.append(female_suite)
-                    suites.append(male_suite)
-                    break
-            else:
-                unmatched_male_suites.append(male_suite)
-        suites.extend(self.female_suites)
-        suites.extend(unmatched_male_suites)
-
-        self.generate_suite_results(suites, filepath("rca_groups.csv"))
-        self.generate_masterlist(suites, filepath("masterlist.csv"))
+        self.generate_suite_results(self.suites, filepath("rca_groups.csv"))
+        self.generate_masterlist(self.suites, filepath("masterlist.csv"))
 
     def generate_suite_results(self, suites, csv_path):
         """
@@ -347,10 +357,10 @@ class ASAP:
             k: v
             for i, living_pref in enumerate(self.LIVING_PREF.cols)
             for k, v in {
-                f"Living Pref: {living_pref}": [[self.LIVING_PREF.num_to_text[i][student.living_prefs[living_pref]]
+                f"Living Pref: {living_pref}": [[self.LIVING_PREF.num_to_text[i][student.data.living_prefs[living_pref]]
                                                  for student in suite.students]
                                                 for suite in suites],
-                living_pref: [[student.living_prefs[living_pref]
+                living_pref: [[student.data.living_prefs[living_pref]
                                for student in suite.students]
                               for suite in suites],
                 f"Score: {living_pref}": [scoring.living_pref_score(suite.students, living_pref, higher_better=True)
@@ -362,10 +372,10 @@ class ASAP:
             "RC": [suite.rc for suite in suites],
             "RCA": [suite.rca for suite in suites],
             "Num_students": [len(suite.students) for suite in suites],
-            "Countries": [[student.country for student in suite.students] for suite in suites],
+            "Countries": [[student.data.country for student in suite.students] for suite in suites],
             "Citizenship Diversity": [scoring.citizenship_diversity_score(suite.students) for suite in suites],
             "Country Diversity": [scoring.country_diversity_score(suite.students) for suite in suites],
-            "Schools": [[student.school for student in suite.students] for suite in suites],
+            "Schools": [[student.data.school for student in suite.students] for suite in suites],
             "School Diversity": [scoring.school_diversity_score(suite.students) for suite in suites],
             **suite_living_prefs,
             "Demographic Score": [scoring.demographic_scores(suite.students) for suite in suites],
@@ -373,21 +383,26 @@ class ASAP:
             "Final Score": [scoring.calculate_success(suite.students) for suite in suites]
         }
         suites_df = pd.DataFrame(suite_data, columns=list(suite_data.keys()))
+        suites_df.sort_values(by=['RCA', 'Suite'], inplace=True, kind="mergesort")
         suites_df.to_csv(csv_path, index=False)
 
     def generate_masterlist(self, suites, csv_path):
+        # The algorithm always allocates locals first followed by internationals so they are ordered in that way
+        # [local, local, local, intl, intl, intl]
+        # random.sample ensures that the local and international students are mixed together
         students = [student for suite in suites for student in random.sample(suite.students, len(suite.students))]
-        df = self.students_df.reindex(student.index for student in students)
+        df = self.students_df.reindex(student.data.index for student in students)
         CURRENT_YEAR = datetime.datetime.now().year
         num_students = len(students)
-        df = df.assign(Suite=[student.current_choice.suite_num for student in students],
+        df = df.assign(Suite=[student.current_choice.data.suite_num for student in students],
                        Room=["TBC" for _ in range(num_students)],
-                       RC=[student.current_choice.rc for student in students],
-                       RCA=[student.current_choice.rca for student in students],
+                       RC=[student.current_choice.data.rc for student in students],
+                       RCA=[student.current_choice.data.rca for student in students],
                        Admit=[CURRENT_YEAR for _ in range(num_students)],
                        Class=[CURRENT_YEAR + 4 for _ in range(num_students)],
                        Student_Type=["First-Year" for _ in range(num_students)],
-                       Unofficial_Residency=[student.citizenship.value for student in students], )
+                       Unofficial_Residency=[student.data.citizenship.value for student in students], )
+        df.sort_values(by=['RCA', 'Suite'], inplace=True, kind="mergesort")
         df.to_csv(csv_path, index=False)
 
 

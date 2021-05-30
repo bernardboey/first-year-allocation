@@ -5,16 +5,16 @@
         <a class="btn btn-secondary py-0" href="{{ url_for('select_options') }}"><strong>&#x2190;</strong> Back</a>
     </div>
     <h1>Review Data</h1>
-        <div class="alert alert-primary mt-4 mb-4">
+    <div class="alert alert-primary mt-4 mb-4">
         <h5 class="mb-0">Please review the following before continuing.
             If you need to change the settings, please do so via the back button.</h5>
     </div>
     <div class="text-start mt-4">
         <h3 class="mb-3">First-Year Suite Allocation</h3>
-        <p>CSV File: <strong>{{ csv_filename }}</strong></p>
+        <p><i>CSV File: <strong>{{ csv_filename }}</strong></i></p>
         <p>Please check that the columns have been labelled correctly:</p>
         <div class="text-start">
-            <table class="table">
+            <table class="table" style="font-size: 0.8rem;">
                 <thead>
                 <tr>
                     <th scope="col">#</th>
@@ -55,18 +55,19 @@
             Female suites: {{ required_suites_female }} ({{ num_females }} split into suites of 6)<br>
         </p>
         <hr class="mt-4 mb-3">
-        <h5 class="mb-4">The first-years will be allocated based on demographics (country and school) and <strong>{{ num_living_prefs }}</strong> living preferences:</h5>
+        <h5 class="mb-4">The first-years will be allocated based on demographics (country and school) and
+            <strong>{{ num_living_prefs }}</strong> living preferences:</h5>
         {% for col in living_prefs %}
-        <div class="mb-4">
-            <p class="fw-bold">Living Preference {{ loop.index }}: "{{ col }}"</p>
-            <p>Weightage: <strong>{{ weights[col] }}%</strong></p>
-            <small class="mb-2">You have chosen the values to be sorted in this order:</small>
-            <ol>
-                {% for value in living_pref_order[loop.index0] %}
-                <li>{{ value }}</li>
-                {% endfor %}
-            </ol>
-        </div>
+            <div class="mb-4">
+                <p class="fw-bold">Living Preference {{ loop.index }}: "{{ col }}"</p>
+                <p>Weightage: <strong>{{ weights[col] }}%</strong></p>
+                <small class="mb-2">You have chosen the values to be sorted in this order:</small>
+                <ol>
+                    {% for value in living_pref_order[loop.index0] %}
+                        <li>{{ value }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
         {% endfor %}
 
     </div>

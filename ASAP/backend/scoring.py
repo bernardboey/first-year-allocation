@@ -10,10 +10,10 @@ def calculate_score(suite, student):
     else:
         students = suite.students + [student]
 
-    overseas_countries = [country for student in students for country in student.country if country != "Singapore"]
+    overseas_countries = [country for student in students for country in student.data.country if country != "Singapore"]
     duplicate_overseas_countries_score = len(overseas_countries) - len(set(overseas_countries)) * 120
 
-    schools = [student.school for student in students]
+    schools = [student.data.school for student in students]
     duplicate_schools_score = len(schools) - len(set(schools)) * 100
 
     score = living_pref_scores(students)
@@ -27,14 +27,14 @@ def calculate_score(suite, student):
     # score = 0.2 * sleep_prefs + 0.4 * suite_prefs + 0.2 * cleanliness_prefs + 0.2 * alcohol_prefs
     score += duplicate_overseas_countries_score + duplicate_schools_score
 
-    citizenships = [student.citizenship for student in students]
+    citizenships = [student.data.citizenship for student in students]
     if citizenships.count(Citizenship.LOCAL) == 4 and citizenships.count(Citizenship.INTERNATIONAL) == 2:
         score -= 1000
     return score
 
 
 def living_pref_score(students, living_pref, higher_better=False):
-    return get_score([student.living_prefs[living_pref] for student in students],
+    return get_score([student.data.living_prefs[living_pref] for student in students],
                      Scores.get_max(living_pref),
                      higher_better)
 
@@ -45,20 +45,21 @@ def living_pref_scores(students, higher_better=False):
 
 
 def rca_demographic_scores(suite1, suite2):
-    citizenships = ([student.citizenship for student in suite1.students]
-                    + [student.citizenship for student in suite2.students])
+    citizenships = ([student.data.citizenship for student in suite1.students]
+                    + [student.data.citizenship for student in suite2.students])
     num_locals = citizenships.count(Citizenship.LOCAL)
     num_intls = citizenships.count(Citizenship.INTERNATIONAL)
 
     citizenship_diversity = abs(num_locals - num_intls) / 2
 
     overseas_countries = ([country for student in suite1.students
-                           for country in student.country if country != "Singapore"]
+                           for country in student.data.country if country != "Singapore"]
                           + [country for student in suite2.students
-                             for country in student.country if country != "Singapore"])
+                             for country in student.data.country if country != "Singapore"])
     country_diversity = len(overseas_countries) - len(set(overseas_countries)) / 3
 
-    schools = [student.school for student in suite1.students] + [student.school for student in suite2.students]
+    schools = ([student.data.school for student in suite1.students]
+               + [student.data.school for student in suite2.students])
     school_diversity = len(schools) - len(set(schools)) / 3
     return 0.4 * citizenship_diversity + 0.3 * country_diversity + 0.3 * school_diversity
 
@@ -128,7 +129,7 @@ def calculate_success(students, demographic_weight=0.4):
 
 
 def citizenship_diversity_score(students):
-    citizenships = [student.citizenship for student in students]
+    citizenships = [student.data.citizenship for student in students]
     num_locals = citizenships.count(Citizenship.LOCAL)
     num_intls = citizenships.count(Citizenship.INTERNATIONAL)
     try:
@@ -150,7 +151,7 @@ def citizenship_diversity_score(students):
 
 
 def country_diversity_score(students):
-    overseas_countries = [country for student in students for country in student.country if country != "Singapore"]
+    overseas_countries = [country for student in students for country in student.data.country if country != "Singapore"]
     if len(overseas_countries) == len(set(overseas_countries)):
         return 1
     elif len(overseas_countries) - len(set(overseas_countries)) == 1:
@@ -160,7 +161,7 @@ def country_diversity_score(students):
 
 
 def school_diversity_score(students):
-    schools = [student.school for student in students]
+    schools = [student.data.school for student in students]
     if len(schools) == len(set(schools)):
         return 1
     elif len(schools) - len(set(schools)) == 1:

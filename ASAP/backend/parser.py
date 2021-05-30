@@ -13,33 +13,8 @@ from ASAP.backend.student import StudentData
 from ASAP.backend import scoring
 from ASAP.backend import util
 
-# A dictionary mapping variable names to the corresponding column names, for the demographic columns.
-# Change this if the headers of the CSV are different.
 
-DEMOGRAPHIC_COLUMNS = {
-    # [variable name]: [column name]
-    "matric": "ID",
-    "sex": "sex",
-    "country": "country",
-    "school": "school",
-    "gender_pref": "gender_pref",
-}
-# A dictionary mapping variable names to the corresponding column names, for the living preference columns.
-# Change this if the headers of the CSV are different.
-LIVING_PREFERENCE_COLUMNS = {
-    # [variable name]: [column name]
-    "sleep_pref": "sleep",
-    "suite_pref": "suite_pref",
-    "cleanliness_pref": "cleanliness",
-    "alcohol_pref": "alcohol",
-}
-COLUMN_NAMES = {
-    **DEMOGRAPHIC_COLUMNS,
-    **LIVING_PREFERENCE_COLUMNS
-}
-
-
-def parse_student_data(csv_path):
+def parse_student_data(students_df):
     """Parses student data from a CSV file.
 
     Args:
@@ -48,94 +23,10 @@ def parse_student_data(csv_path):
     Returns:
         Two lists containing StudentData objects, one list for female students and one list for male students.
     """
-    students_df = pd.read_csv(csv_path)
-    validate_student_data(students_df)
-    set_max_scores(students_df)
-    female_students, male_students = add_students(students_df)
+
     return female_students, male_students
 
 
-def validate_student_data(students_df):
-    """Validates the data from a CSV file.
-
-    Validates the following:
-    1. All required columns are present
-    2. Extra columns are detected and the user is asked to confirm that they are not used
-    3. Sex column only contains "M" and "F"
-    4. Living preference columns contain only integers
-
-    Makes use of the columns as listed above (DEMOGRAPHIC_COLUMNS and LIVING_PREFERENCE_COLUMNS).
-    Please edit those constants if the column names change or more columns need to be added.
-
-    Args:
-        students_df: A Pandas DataFrame containing student data.
-    """
-    required_columns = list(COLUMN_NAMES.values())
-    df_columns = list(students_df.columns)
-    extra_columns = []
-
-    # Checks whether all required columns are present and detects extra columns
-    for column in required_columns + df_columns:
-        if column not in df_columns:
-            raise ValueError(f"Column '{column}' is missing in the csv.")
-        if column not in required_columns:
-            extra_columns.append(column)
-    if extra_columns:
-        # Reminds user that extra columns will not be used and verifies that user wants to continue
-        proceed = util.input_yes_no(f"The following extra column(s) will not be used: {', '.join(extra_columns)}.\n"
-                               f"Do you want to continue?")
-        if not proceed:  # User indicates that extra columns should be used.
-            print("Okay, please edit the code to incorporate the extra column(s).")
-            raise SystemExit
-
-    # Checks whether the sex column only contains "M" and "F"
-    for sex in students_df[COLUMN_NAMES["sex"]].unique():
-        if sex not in ("M", "F"):
-            raise ValueError(f"Column '{COLUMN_NAMES['sex']}' contains unrecognised sex: {sex}.")
-
-    # Checks whether living preference columns contain only integers
-    for column in LIVING_PREFERENCE_COLUMNS.values():
-        try:
-            if not np.array_equal(students_df[column], students_df[column].astype(int)):  # True if only integers
-                raise ValueError(f"Column '{column}' needs to contain only integers (e.g. 0, 1, 2, 3, 4).")
-        except ValueError:
-            raise ValueError(f"Column '{column}' needs to be numeric (e.g. 0, 1, 2, 3, 4).")
-
-
-def set_max_scores(students_df):
-    unique_options = {}
-    for living_pref in LIVING_PREFERENCE_COLUMNS:
-        unique_options[living_pref] = list(students_df[COLUMN_NAMES[living_pref]].unique())
-    scoring.MaxScores.set_max_scores(unique_options)
-
-
-def add_students(students_df):
-    """Creates StudentData objects based on student data from a Pandas DataFrame.
-
-    Makes use of the columns as listed above (DEMOGRAPHIC_COLUMNS and LIVING_PREFERENCE_COLUMNS).
-    Please edit those constants if the column names change or more columns need to be added.
-    Please also edit the StudentData class if more columns need to be added.
-
-    Args:
-        students_df: A Pandas DataFrame containing student data.
-
-    Returns:
-        Two lists containing StudentData objects, one list for female students and one list for male students.
-    """
-    female_students = []
-    male_students = []
-    for i in range(len(students_df)):
-        # Gathers data for one student in a dictionary that maps variable names to the values
-        student_data = {var: students_df.loc[i, col_name] for var, col_name in COLUMN_NAMES.items()}
-        new_student = StudentData(**student_data)
-        sex = students_df.loc[i, COLUMN_NAMES["sex"]]
-        if sex == "F":
-            female_students.append(new_student)
-        elif sex == "M":
-            male_students.append(new_student)
-        else:
-            raise ValueError(f"Unrecognised sex: {sex}")
-    return female_students, male_students
 
 
 def generate_temp_results(suites, csv_path):

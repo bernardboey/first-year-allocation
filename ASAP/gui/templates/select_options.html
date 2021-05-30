@@ -18,15 +18,15 @@
     {% endif %}
     <form action="" method="post" enctype="multipart/form-data" class="text-start">
         <div class="mb-2">
-            <label for="saga-suites" class="form-label">Available Suites in Saga</label>
+            <label for="saga-suites" class="form-label">Available Suites in <strong>Saga</strong></label>
             <input type="number" class="form-control" id="saga-suites" name="saga-suites" value="{{ saga_suites }}" min="0" max="30" required>
         </div>
         <div class="mb-2">
-            <label for="elm-suites" class="form-label">Available Suites in Elm</label>
+            <label for="elm-suites" class="form-label">Available Suites in <strong>Elm</strong></label>
             <input type="number" class="form-control" id="elm-suites" name="elm-suites" value="{{ elm_suites }}" min="0" max="30" required>
         </div>
         <div class="mb-2">
-            <label for="cendana-suites" class="form-label">Available Suites in Cendana</label>
+            <label for="cendana-suites" class="form-label">Available Suites in <strong>Cendana</strong></label>
             <input type="number" class="form-control" id="cendana-suites" name="cendana-suites" value="{{ cendana_suites }}" min="0" max="30" required>
         </div>
         <div class="mb-2 text-center">
