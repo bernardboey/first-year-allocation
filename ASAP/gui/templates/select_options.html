@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Select Options{% endblock %}
+{% block content %}
+    <div class="text-start mt-2">
+        <a class="btn btn-secondary py-0" href="{{ url_for('select_weights') }}"><strong>&#x2190;</strong>
+            Back</a>
+    </div>
+
+    <h1>Select Options</h1>
+    <div class="alert alert-primary mt-4 mb-4">
+        <h5 class="mb-0">Please input the number of suites that are available in each RC.</h5>
+    </div>
+    {% if error_msg %}
+        <div class="alert alert-danger text-start mb-4">
+            <p class="fw-bold">ERROR</p>
+            <p class="mb-0">{{ error_msg }}</p>
+        </div>
+    {% endif %}
+    <form action="" method="post" enctype="multipart/form-data" class="text-start">
+        <div class="mb-2">
+            <label for="saga-suites" class="form-label">Available Suites in <strong>Saga</strong></label>
+            <input type="number" class="form-control" id="saga-suites" name="saga-suites" value="{{ saga_suites }}" min="0" max="30" required>
+        </div>
+        <div class="mb-2">
+            <label for="elm-suites" class="form-label">Available Suites in <strong>Elm</strong></label>
+            <input type="number" class="form-control" id="elm-suites" name="elm-suites" value="{{ elm_suites }}" min="0" max="30" required>
+        </div>
+        <div class="mb-2">
+            <label for="cendana-suites" class="form-label">Available Suites in <strong>Cendana</strong></label>
+            <input type="number" class="form-control" id="cendana-suites" name="cendana-suites" value="{{ cendana_suites }}" min="0" max="30" required>
+        </div>
+        <div class="mb-2 text-center">
+            <button type="submit" class="btn btn-primary">Proceed</button>
+        </div>
+    </form>
+{% endblock %}

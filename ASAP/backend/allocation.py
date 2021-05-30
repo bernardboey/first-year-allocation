@@ -4,8 +4,9 @@ import itertools
 
 import numpy as np
 
-from ASAP import match, scoring
-from ASAP.student import Citizenship
+from ASAP.backend import match
+from ASAP.backend import scoring
+from ASAP.backend.student import Citizenship
 
 
 class SuiteAllocation:

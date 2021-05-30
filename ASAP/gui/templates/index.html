@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+    <h1 class="mb-3">ASAP</h1>
+    <h4>Automated Suite Allocation Program</h4>
+    <h4>for Yale-NUS First-Years</h4>
+    <small>Version 0.1.0 (31 May 2021)</small>
+    <div class="text-start mt-4">
+        <p>
+            To begin, please upload a <b>.csv</b> file containing information about the first-years.
+            Each row (except the first) should represent a student.
+            The first row should contain headers.
+            There should be columns representing the following:
+        </p>
+        <ul>
+            <li>Student ID (Student names can be used instead but must be unique)</li>
+            <li>School name / School ID</li>
+            <li>Sex (must be "M" or "F")</li>
+            <li>Country (e.g. "Singapore", "United States", etc.)</li>
+            <li>Living Preferences (Each question must be multiple choice, and must be <a href="https://en.wikipedia.org/wiki/Ordinal_data" target="_blank">ordinal</a>)</li>
+            <li>Other columns are allowed, and they will not interfere with the allocation.</li>
+        </ul>
+        <p>There must be <b>no missing values</b>. Please make sure your internet connection is on, as the program requires access to an online CSS stylesheet (Bootstrap). This will be fixed in future versions.</p>
+    </div>
+    <form method="post" enctype="multipart/form-data" class="mt-4">
+        <div class="mb-3">
+            <button type="submit" class="btn btn-primary">Choose File</button>
+        </div>
+    </form>
+    {% if error_msg %}
+        <div class="alert alert-danger text-start">
+            <p class="fw-bold">ERROR</p>
+            <p class="mb-0">{{ error_msg }}</p>
+        </div>
+    {% endif %}
+    <a href="https://github.com/bernardboey/first-year-allocation/wiki" target="_blank" class="btn btn-secondary"
+       type="button">Help</a>
+    <div class="text-start mt-4" style="color: #555555; font-size: 0.8rem;">
+        If you cannot access the help page, please contact your predecessor or email the original developer (bernard@u.yale-nus.edu.sg).
+    </div>
+{% endblock %}
