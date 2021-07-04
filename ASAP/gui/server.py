@@ -76,10 +76,11 @@ def select_column_type():
                 selected_values[f"column{i}"] = _type.desc
 
         # TEMPORARILY HERE TO SPEED UP DEVELOPMENT #
-        # for i, _type in enumerate((asap_obj.ID, asap_obj.OTHERS, asap_obj.SEX, asap_obj.SCHOOL, asap_obj.COUNTRY,
-        #                            asap_obj.OTHERS, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF,
-        #                            asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF)):
-        #     selected_values[f"column{i}"] = _type.desc
+        for i, _type in enumerate((asap_obj.ID, asap_obj.OTHERS, asap_obj.SEX, asap_obj.SCHOOL, asap_obj.COUNTRY,
+                                   asap_obj.ACCESSIBILITY, asap_obj.AVAILABLE_RCS, asap_obj.OTHERS,
+                                   asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF,
+                                   asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF)):
+            selected_values[f"column{i}"] = _type.desc
         # END OF BLOCK #
     return render_template('select_column_type.html',
                            csv_filename=asap_obj.filename,
@@ -227,7 +228,7 @@ def results():
         "avail_suites_cendana": asap_obj.avail_suites_cendana,
         "total_suites": asap_obj.total_suites,
         "used_suites": len(asap_obj.suites),
-        "rc_list": asap_obj.RC_LIST,
+        "rc_list": asap_obj.RC_LIST_WITH_UNALLOCATED,
         "female_stats": asap_obj.female_stats,
         "male_stats": asap_obj.male_stats,
         "num_living_prefs": len(asap_obj.LIVING_PREF.cols),

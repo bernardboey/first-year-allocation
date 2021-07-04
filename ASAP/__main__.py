@@ -27,8 +27,6 @@ This file contains the following functions:
     * add_students - Parses data from the student dataframe and returns a list of Student objects
     * main - The main function of the script that allocates suites, taking data from a .csv file
 
-TODO: Can we try to automate the part where we define the preferences or at least make it dynamic?
-    Because the questions may differ year by year.
 TODO: Check correctness of code (.copy()?)
 """
 
@@ -101,7 +99,8 @@ class LivingPrefColumnType(NonExclusiveColumnType):
 
 
 class ASAP:
-    RC_LIST = ("Saga", "Elm", "Cendana", "Unallocated")
+    RC_LIST = ("Saga", "Elm", "Cendana")
+    RC_LIST_WITH_UNALLOCATED = (*RC_LIST, "Unallocated")
 
     def __init__(self, filepath):
         self.filepath = filepath
@@ -118,8 +117,11 @@ class ASAP:
         self.SEX = ExclusiveColumnType("Sex", mandatory=True)
         self.COUNTRY = NonExclusiveColumnType("Country", mandatory=True)
         self.LIVING_PREF = LivingPrefColumnType("Living Preference", mandatory=True)
+        self.ACCESSIBILITY = ExclusiveColumnType("Accessibility", mandatory=True)
+        self.AVAILABLE_RCS = ExclusiveColumnType("Available RCs", mandatory=True)
         self.OTHERS = NonExclusiveColumnType("Others", mandatory=False)
-        self.COL_TYPES = [self.ID, self.SCHOOL, self.SEX, self.COUNTRY, self.LIVING_PREF, self.OTHERS]
+        self.COL_TYPES = [self.ID, self.SCHOOL, self.SEX, self.COUNTRY, self.ACCESSIBILITY, self.AVAILABLE_RCS,
+                          self.LIVING_PREF, self.OTHERS]
 
         self.avail_suites_saga = 0
         self.avail_suites_elm = 0
@@ -191,7 +193,8 @@ class ASAP:
         # Check that all mandatory types have corresponding columns
         for _type in self.COL_TYPES:
             if _type.mandatory and not _type.defined:
-                raise ValueError(f"You did not select any columns for '{_type.desc}'. Please try again.")
+                raise ValueError(f"You did not select any column for '{_type.desc}'. Please try again.")
+
         # Check that Sex is just M and F
         self.students_df[self.SEX.col] = self.students_df[self.SEX.col].str.upper()
         for value in self.students_df[self.SEX.col].unique():
@@ -201,14 +204,33 @@ class ASAP:
         self.num_males = len(self.students_df[self.students_df[self.SEX.col] == 'M'])
         self.num_females = len(self.students_df[self.students_df[self.SEX.col] == 'F'])
 
+        # Check that Singapore is present in the country column
         if "Singapore" not in self.students_df[self.COUNTRY.cols[0]].unique():
             raise ValueError(f"The value 'Singapore' cannot be found in the column you selected for "
                              f"'{self.COUNTRY.desc}' (column '{self.COUNTRY.cols[0]}'). "
                              f"Did you identify the columns correctly?")
 
+        # Check that ID column in unique
         if not self.students_df[self.ID.col].is_unique:
             raise ValueError(f"The column that you selected for '{self.ID.desc}' (column '{self.ID.col}') "
                              f"contains duplicate values. Did you identify the columns correctly?")
+
+        # Check that Accessibility is just Yes and No
+        for value in self.students_df[self.ACCESSIBILITY.col].unique():
+            if value not in ("Yes", "No"):
+                raise ValueError(f"Column that represents '{self.ACCESSIBILITY.desc}' should only contain 'Yes' and "
+                                 f"'No'. Currently it contains '{value}' as well.")
+
+        # Check that Available RCs is just Saga, Elm, Cendana (separated by ", ")
+        for rc_list in self.students_df[self.AVAILABLE_RCS.col].unique():
+            for value in rc_list.split(", "):
+                if value not in self.RC_LIST:
+                    raise ValueError(f"Column that represents '{self.AVAILABLE_RCS.desc}' should only contain the "
+                                     f"following possible values: {', '.join(self.RC_LIST)}. If a student can be "
+                                     f"allocated to more than one RC, the RCs should be separated by a comma "
+                                     f"(e.g. 'Saga, Cendana'). "
+                                     f"Currently you have the following illegal value: '{rc_list}'.")
+
         self.col_types_defined = True
 
     def set_living_pref_order(self, selected_order: List[List[str]]):
@@ -309,8 +331,8 @@ class ASAP:
         return female_students, male_students
 
     def calculate_statistics(self):
-        self.female_stats = {rc: (0, 0) for rc in self.RC_LIST}
-        self.male_stats = {rc: (0, 0) for rc in self.RC_LIST}
+        self.female_stats = {rc: (0, 0) for rc in self.RC_LIST_WITH_UNALLOCATED}
+        self.male_stats = {rc: (0, 0) for rc in self.RC_LIST_WITH_UNALLOCATED}
         for suite in self.female_suites:
             num_students, num_suites = self.female_stats[suite.rc]
             self.female_stats[suite.rc] = (len(suite.students) + num_students, 1 + num_suites)
@@ -321,7 +343,7 @@ class ASAP:
 
     def allocate_suites(self, students, name):
         allocations = {}
-        for i in range(20):
+        for i in range(100):
             suite_allocation = SuiteAllocation(students, name)
             suite_allocation.match()
             global_score = suite_allocation.global_score()
