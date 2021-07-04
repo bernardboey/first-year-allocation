@@ -143,26 +143,37 @@ def select_options():
     error_msg = None
     asap_obj = restore_pickle()
     if asap_obj.options_defined:
-        saga = asap_obj.avail_suites_saga
-        elm = asap_obj.avail_suites_elm
-        cendana = asap_obj.avail_suites_cendana
+        saga_sextets = asap_obj.avail_sextets_saga
+        elm_sextets = asap_obj.avail_sextets_elm
+        cendana_sextets = asap_obj.avail_sextets_cendana
+        saga_a11y_suites = asap_obj.avail_a11y_suites_saga
+        elm_a11y_suites = asap_obj.avail_a11y_suites_elm
+        cendana_a11y_suites = asap_obj.avail_a11y_suites_cendana
     else:
-        saga, elm, cendana = 14, 14, 14
+        saga_sextets, elm_sextets, cendana_sextets = 14, 14, 14
+        saga_a11y_suites, elm_a11y_suites, cendana_a11y_suites = 0, 0, 0
     if request.method == 'POST':
-        saga = int(request.form["saga-suites"])
-        elm = int(request.form["elm-suites"])
-        cendana = int(request.form["cendana-suites"])
+        saga_sextets = int(request.form["saga-sextets"])
+        elm_sextets = int(request.form["elm-sextets"])
+        cendana_sextets = int(request.form["cendana-sextets"])
+        saga_a11y_suites = int(request.form["saga-a11y-suites"])
+        elm_a11y_suites = int(request.form["elm-a11y-suites"])
+        cendana_a11y_suites = int(request.form["cendana-a11y-suites"])
         try:
-            asap_obj.set_options(saga, elm, cendana)
+            asap_obj.set_options(saga_sextets, elm_sextets, cendana_sextets,
+                                 saga_a11y_suites, elm_a11y_suites, cendana_a11y_suites)
         except ValueError as e:
             error_msg = str(e)
         else:
             save_pickle(asap_obj)
             return redirect(url_for("review_data"))
     return render_template('select_options.html',
-                           saga_suites=saga,
-                           elm_suites=elm,
-                           cendana_suites=cendana,
+                           saga_sextets=saga_sextets,
+                           elm_sextets=elm_sextets,
+                           cendana_sextets=cendana_sextets,
+                           saga_a11y_suites=saga_a11y_suites,
+                           elm_a11y_suites=elm_a11y_suites,
+                           cendana_a11y_suites=cendana_a11y_suites,
                            error_msg=error_msg)
 
 
@@ -183,12 +194,18 @@ def review_data():
                            colnames=colnames, head_values=enumerate(head_values, start=1),
                            total_students=asap_obj.total_students,
                            num_males=asap_obj.num_males, num_females=asap_obj.num_females,
-                           avail_suites_saga=asap_obj.avail_suites_saga,
-                           avail_suites_elm=asap_obj.avail_suites_elm,
-                           avail_suites_cendana=asap_obj.avail_suites_cendana,
+                           num_a11y_males=asap_obj.num_a11y_males, num_a11y_females=asap_obj.num_a11y_females,
+                           avail_sextets_saga=asap_obj.avail_sextets_saga,
+                           avail_sextets_elm=asap_obj.avail_sextets_elm,
+                           avail_sextets_cendana=asap_obj.avail_sextets_cendana,
+                           avail_a11y_suites_saga=asap_obj.avail_a11y_suites_saga,
+                           avail_a11y_suites_elm=asap_obj.avail_a11y_suites_elm,
+                           avail_a11y_suites_cendana=asap_obj.avail_a11y_suites_cendana,
                            total_suites=asap_obj.total_suites, required_suites=asap_obj.required_suites,
                            required_suites_male=asap_obj.required_suites_male,
                            required_suites_female=asap_obj.required_suites_female,
+                           required_a11y_suites_male=asap_obj.required_a11y_suites_male,
+                           required_a11y_suites_female=asap_obj.required_a11y_suites_female,
                            num_living_prefs=len(asap_obj.LIVING_PREF.cols),
                            living_prefs=asap_obj.LIVING_PREF.cols,
                            living_pref_order=asap_obj.LIVING_PREF.selected_order,
@@ -223,9 +240,14 @@ def results():
         "total_students": asap_obj.total_students,
         "num_males": asap_obj.num_males,
         "num_females": asap_obj.num_females,
-        "avail_suites_saga": asap_obj.avail_suites_saga,
-        "avail_suites_elm": asap_obj.avail_suites_elm,
-        "avail_suites_cendana": asap_obj.avail_suites_cendana,
+        "num_a11y_males": asap_obj.num_a11y_males,
+        "num_a11y_females": asap_obj.num_a11y_females,
+        "avail_sextets_saga": asap_obj.avail_sextets_saga,
+        "avail_sextets_elm": asap_obj.avail_sextets_elm,
+        "avail_sextets_cendana": asap_obj.avail_sextets_cendana,
+        "avail_a11y_suites_saga": asap_obj.avail_a11y_suites_saga,
+        "avail_a11y_suites_elm": asap_obj.avail_a11y_suites_elm,
+        "avail_a11y_suites_cendana": asap_obj.avail_a11y_suites_cendana,
         "total_suites": asap_obj.total_suites,
         "used_suites": len(asap_obj.suites),
         "rc_list": asap_obj.RC_LIST_WITH_UNALLOCATED,
@@ -234,7 +256,7 @@ def results():
         "num_living_prefs": len(asap_obj.LIVING_PREF.cols),
         "living_prefs": asap_obj.LIVING_PREF.cols,
         "living_pref_order": asap_obj.LIVING_PREF.selected_order,
-        "weights": asap_obj.LIVING_PREF.weights
+        "weights": asap_obj.LIVING_PREF.weights,
     }
     if request.method == 'POST':
         folder_path = WINDOW.create_file_dialog(webview.FOLDER_DIALOG, directory='/')

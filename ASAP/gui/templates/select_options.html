@@ -18,16 +18,28 @@
     {% endif %}
     <form action="" method="post" enctype="multipart/form-data" class="text-start">
         <div class="mb-2">
-            <label for="saga-suites" class="form-label">Available Suites in <strong>Saga</strong></label>
-            <input type="number" class="form-control" id="saga-suites" name="saga-suites" value="{{ saga_suites }}" min="0" max="30" required>
+            <label for="saga-sextets" class="form-label">Available sextets in <strong>Saga</strong></label>
+            <input type="number" class="form-control" id="saga-sextets" name="saga-sextets" value="{{ saga_sextets }}" min="0" max="30" required>
         </div>
         <div class="mb-2">
-            <label for="elm-suites" class="form-label">Available Suites in <strong>Elm</strong></label>
-            <input type="number" class="form-control" id="elm-suites" name="elm-suites" value="{{ elm_suites }}" min="0" max="30" required>
+            <label for="saga-a11y-suites" class="form-label">Available <strong>accessibility</strong> suites in <strong>Saga</strong></label>
+            <input type="number" class="form-control" id="saga-a11y-suites" name="saga-a11y-suites" value="{{ saga_a11y_suites }}" min="0" max="30" required>
         </div>
         <div class="mb-2">
-            <label for="cendana-suites" class="form-label">Available Suites in <strong>Cendana</strong></label>
-            <input type="number" class="form-control" id="cendana-suites" name="cendana-suites" value="{{ cendana_suites }}" min="0" max="30" required>
+            <label for="elm-sextets" class="form-label">Available sextets in <strong>Elm</strong></label>
+            <input type="number" class="form-control" id="elm-sextets" name="elm-sextets" value="{{ elm_sextets }}" min="0" max="30" required>
+        </div>
+        <div class="mb-2">
+            <label for="elm-a11y-suites" class="form-label">Available <strong>accessibility</strong> suites in <strong>Elm</strong></label>
+            <input type="number" class="form-control" id="elm-a11y-suites" name="elm-a11y-suites" value="{{ elm_a11y_suites }}" min="0" max="30" required>
+        </div>
+        <div class="mb-2">
+            <label for="cendana-sextets" class="form-label">Available sextets in <strong>Cendana</strong></label>
+            <input type="number" class="form-control" id="cendana-sextets" name="cendana-sextets" value="{{ cendana_sextets }}" min="0" max="30" required>
+        </div>
+        <div class="mb-2">
+            <label for="cendana-a11y-suites" class="form-label">Available <strong>accessibility</strong> suites in <strong>Cendana</strong></label>
+            <input type="number" class="form-control" id="cendana-a11y-suites" name="cendana-a11y-suites" value="{{ cendana_a11y_suites }}" min="0" max="30" required>
         </div>
         <div class="mb-2 text-center">
             <button type="submit" class="btn btn-primary">Proceed</button>
