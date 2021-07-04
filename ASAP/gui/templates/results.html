@@ -22,18 +22,21 @@
         </p>
         <h3>Suite Statistics</h3>
         <div class="alert alert-info py-2" role="alert">
-            Note: The following numbers exclude students that are allocated to gender neutral suites.
+            Note: The following numbers exclude students that are allocated to gender inclusive suites.
         </div>
         <p class="fw-bold mb-1">Total Students: {{ total_students }}</p>
         <p>
-            No. of Males: {{ num_males }}<br>
-            No. of Females: {{ num_females }}
+            No. of Males: {{ num_males }} ({{ num_a11y_males }} accessibility)<br>
+            No. of Females: {{ num_females }} ({{ num_a11y_females }} accessibility)
         </p>
         <p class="fw-bold mb-1">Total Suites Available: {{ total_suites }}</p>
         <p>
-            Saga: {{ avail_suites_saga }}<br>
-            Elm: {{ avail_suites_elm }}<br>
-            Cendana: {{ avail_suites_cendana }}
+            Saga sextets: {{ avail_sextets_saga }}<br>
+            Saga accessibility: {{ avail_a11y_suites_saga }}<br>
+            Elm sextets: {{ avail_sextets_elm }}<br>
+            Elm accessibility: {{ avail_a11y_suites_elm }}<br>
+            Cendana sextets: {{ avail_sextets_cendana }}<br>
+            Cendana accessibility: {{ avail_a11y_suites_cendana }}
         </p>
         <p class="fw-bold mb-3">Used Suites: {{ used_suites }} / {{ total_suites }}</p>
         <div class="text-start">

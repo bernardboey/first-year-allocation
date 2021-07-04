@@ -11,12 +11,13 @@ from ASAP.backend.student import Citizenship
 
 class SuiteAllocation:
     class SuiteData:
-        def __init__(self, suite_num, capacity):
+        def __init__(self, suite_num, capacity, accessibility=False, rc=None):
             self.suite_num = suite_num
+            self.accessibility = accessibility
             self._capacity = capacity
             self.vacancies = capacity
             self.students = []
-            self.rc = None
+            self.rc = rc
             self.rca = None
 
         @property
@@ -38,6 +39,7 @@ class SuiteAllocation:
         self.student_results = []
         self.total_students = len(students)
         self.batch_size = math.ceil(self.total_students/6)
+        # TODO: Add accessibility suite here
         self.suites = [SuiteAllocation.SuiteData(f"FY {name} Suite {i:02d}", 6) for i in range(1, self.batch_size + 1)]
         self.batches = self.split_into_batches()
 

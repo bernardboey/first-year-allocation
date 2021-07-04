@@ -116,22 +116,38 @@ class ASAP:
         self.SCHOOL = ExclusiveColumnType("School", mandatory=True)
         self.SEX = ExclusiveColumnType("Sex", mandatory=True)
         self.COUNTRY = NonExclusiveColumnType("Country", mandatory=True)
-        self.LIVING_PREF = LivingPrefColumnType("Living Preference", mandatory=True)
         self.ACCESSIBILITY = ExclusiveColumnType("Accessibility", mandatory=True)
         self.AVAILABLE_RCS = ExclusiveColumnType("Available RCs", mandatory=True)
+        self.LIVING_PREF = LivingPrefColumnType("Living Preference", mandatory=True)
         self.OTHERS = NonExclusiveColumnType("Others", mandatory=False)
         self.COL_TYPES = [self.ID, self.SCHOOL, self.SEX, self.COUNTRY, self.ACCESSIBILITY, self.AVAILABLE_RCS,
                           self.LIVING_PREF, self.OTHERS]
 
-        self.avail_suites_saga = 0
-        self.avail_suites_elm = 0
-        self.avail_suites_cendana = 0
+        self.avail_sextets_saga = 0
+        self.avail_sextets_elm = 0
+        self.avail_sextets_cendana = 0
+        self.avail_a11y_suites_saga = 0
+        self.avail_a11y_suites_elm = 0
+        self.avail_a11y_suites_cendana = 0
+
+        self.total_sextets = 0
+        self.total_a11y_suites = 0
         self.total_suites = 0
+
+        self.required_a11y_suites_male = 0
+        self.required_a11y_suites_female = 0
+        self.required_a11y_suites = 0
+        self.required_sextets_male = 0
+        self.required_sextets_female = 0
         self.required_suites = 0
         self.required_suites_male = 0
         self.required_suites_female = 0
+
         self.num_males = 0
         self.num_females = 0
+        self.num_a11y_females = 0
+        self.num_a11y_males = 0
+        self.num_a11y_students = 0
 
         self.female_suites = None
         self.male_suites = None
@@ -262,23 +278,70 @@ class ASAP:
 
         self.weights_defined = True
 
-    def set_options(self, saga, elm, cendana):
+    def set_options(self, saga_sextets, elm_sextets, cendana_sextets, saga_a11y_suites, elm_a11y_suites,
+                    cendana_a11y_suites):
         if not self.weights_defined:
             raise ValueError("self.set_weights(weights) MUST be called first")
 
-        self.avail_suites_saga = saga
-        self.avail_suites_elm = elm
-        self.avail_suites_cendana = cendana
+        self.avail_sextets_saga = saga_sextets
+        self.avail_sextets_elm = elm_sextets
+        self.avail_sextets_cendana = cendana_sextets
+        self.avail_a11y_suites_saga = saga_a11y_suites
+        self.avail_a11y_suites_elm = elm_a11y_suites
+        self.avail_a11y_suites_cendana = cendana_a11y_suites
 
-        self.total_suites = self.avail_suites_saga + self.avail_suites_elm + self.avail_suites_cendana
-        self.required_suites_male = math.ceil(self.num_males / 6)
-        self.required_suites_female = math.ceil(self.num_females / 6)
+        self.num_a11y_females = len(self.students_df[(self.students_df[self.ACCESSIBILITY.col] == 'Yes')
+                                                     & (self.students_df[self.SEX.col] == 'F')])
+        self.num_a11y_males = len(self.students_df[(self.students_df[self.ACCESSIBILITY.col] == 'Yes')
+                                                   & (self.students_df[self.SEX.col] == 'M')])
+        self.num_a11y_students = self.num_a11y_females + self.num_a11y_females
+
+        self.total_sextets = self.avail_sextets_saga + self.avail_sextets_elm + self.avail_sextets_cendana
+        self.total_a11y_suites = (self.avail_a11y_suites_saga + self.avail_a11y_suites_elm
+                                  + self.avail_a11y_suites_cendana)
+        self.total_suites = self.total_sextets + self.total_a11y_suites
+
+        self.required_a11y_suites_male = ((self.num_a11y_males - 1) // 5) + 1
+        self.required_a11y_suites_female = ((self.num_a11y_females - 1) // 5) + 1
+        self.required_a11y_suites = self.required_a11y_suites_male + self.required_a11y_suites_female
+        if self.total_a11y_suites < self.required_a11y_suites:
+            raise ValueError(f"Not enough accessibility suites. {self.required_a11y_suites} accessibility suites are "
+                             f"required to house {self.num_a11y_females} females and {self.num_a11y_males} males with "
+                             f"accessibility requirements but only {self.total_a11y_suites} are available.")
+
+        self.required_sextets_male = math.ceil((self.num_males - (self.required_a11y_suites_male * 5)) / 6)
+        self.required_sextets_female = math.ceil((self.num_females - (self.required_a11y_suites_female * 5)) / 6)
+
+        self.required_suites_male = self.required_sextets_male + self.required_a11y_suites_male
+        self.required_suites_female = self.required_sextets_female + self.required_a11y_suites_female
+
         self.required_suites = self.required_suites_male + self.required_suites_female
+
         if self.total_suites < self.required_suites:
             raise ValueError(f"Not enough suites. {self.required_suites} suites are required to house "
                              f"{self.num_females} females and {self.num_males} males but only {self.total_suites} are "
                              f"available. Did you enter the correct number of available suites? "
-                             f"Have you removed the gender neutral students from the CSV file?")
+                             f"Have you removed the gender inclusive students from the CSV file?")
+
+        # List of RCs that have accessibility suites
+        a11y_rcs = []
+        if self.avail_a11y_suites_saga:
+            a11y_rcs.append("Saga")
+        if self.avail_a11y_suites_elm:
+            a11y_rcs.append("Elm")
+        if self.avail_a11y_suites_cendana:
+            a11y_rcs.append("Cendana")
+
+        # Check if there is an accessibility suites for accessibility students in the correct RC
+        for i in range(len(self.students_df)):
+            if self.students_df.loc[i, self.ACCESSIBILITY.col] == "Yes":
+                allowed_rcs = self.students_df.loc[i, self.AVAILABLE_RCS.col].split(", ")
+                for rc in a11y_rcs:
+                    if rc in allowed_rcs:
+                        break
+                else:
+                    raise ValueError(f"Student {self.students_df.loc[i, self.ID.col]} needs an accessibility suite in "
+                                     f"one of the following RCs: {self.students_df.loc[i, self.AVAILABLE_RCS.col]}.")
 
         self.options_defined = True
 
@@ -287,9 +350,9 @@ class ASAP:
         self.female_suites = self.allocate_suites(female_students, "Female")
         self.male_suites = self.allocate_suites(male_students, "Male")
         rca_match = match.RCAMatch(self.female_suites, self.male_suites,
-                                   saga=self.avail_suites_saga,
-                                   elm=self.avail_suites_elm,
-                                   cendana=self.avail_suites_cendana)
+                                   saga=self.avail_sextets_saga,
+                                   elm=self.avail_sextets_elm,
+                                   cendana=self.avail_sextets_cendana)
         rca_match.run_match()
         self.suites = self.male_suites + self.female_suites
         self.calculate_statistics()
@@ -344,6 +407,7 @@ class ASAP:
     def allocate_suites(self, students, name):
         allocations = {}
         for i in range(100):
+            # TODO: Add number of accessibility suites here
             suite_allocation = SuiteAllocation(students, name)
             suite_allocation.match()
             global_score = suite_allocation.global_score()
@@ -428,47 +492,47 @@ class ASAP:
         df.to_csv(csv_path, index=False)
 
 
-def main():
-    if len(sys.argv) != 2:
-        print("Wrong format! Please type 'python -m ASAP [csv_file]'")
-        return
-    csv_path = sys.argv[1]
-    female_students, male_students = parser.parse_student_data(csv_path)
-    female_suites = allocate_suites(female_students, "Female")
-    allocate_randomly(female_students, "Female")
-    male_suites = allocate_suites(male_students, "Male")
-    allocate_randomly(male_students, "Male")
-
-    rca_match = match.RCAMatch(female_suites, male_suites, saga=16, elm=16, cendana=16)
-    rca_match.run_match()
-
-    parser.generate_masterlist(female_suites + male_suites, f"output/first_year_masterlist_by_algorithm.csv")
-
-
-def allocate_suites(students, name):
-    allocations = {}
-    for i in range(20):
-        suite_allocation = SuiteAllocation(students, name)
-        suite_allocation.match()
-        global_score = suite_allocation.global_score()
-        allocated_suites = suite_allocation.get_allocation()
-        print(f"Global score: {global_score}")
-        allocations[global_score] = allocated_suites
-    final_score = max(allocations)
-    allocated_suites = allocations[final_score]
-    print(f"\nFinal score: {final_score}\n")
-    parser.generate_temp_results(allocated_suites, f"output/{name}_suites.csv")
-    return allocated_suites
-
-
-def allocate_randomly(students, name):
-    suite_allocation = SuiteAllocation(students, name)
-    suite_allocation.allocate_randomly()
-    global_score = suite_allocation.global_score()
-    allocated_suites = suite_allocation.get_allocation()
-    print(f"\nRandom allocation score: {global_score}\n")
-    parser.generate_temp_results(allocated_suites, f"output/{name}_random.csv")
-
-
-if __name__ == "__main__":
-    main()
+# def main():
+#     if len(sys.argv) != 2:
+#         print("Wrong format! Please type 'python -m ASAP [csv_file]'")
+#         return
+#     csv_path = sys.argv[1]
+#     female_students, male_students = parser.parse_student_data(csv_path)
+#     female_suites = allocate_suites(female_students, "Female")
+#     allocate_randomly(female_students, "Female")
+#     male_suites = allocate_suites(male_students, "Male")
+#     allocate_randomly(male_students, "Male")
+#
+#     rca_match = match.RCAMatch(female_suites, male_suites, saga=16, elm=16, cendana=16)
+#     rca_match.run_match()
+#
+#     parser.generate_masterlist(female_suites + male_suites, f"output/first_year_masterlist_by_algorithm.csv")
+#
+#
+# def allocate_suites(students, name):
+#     allocations = {}
+#     for i in range(20):
+#         suite_allocation = SuiteAllocation(students, name)
+#         suite_allocation.match()
+#         global_score = suite_allocation.global_score()
+#         allocated_suites = suite_allocation.get_allocation()
+#         print(f"Global score: {global_score}")
+#         allocations[global_score] = allocated_suites
+#     final_score = max(allocations)
+#     allocated_suites = allocations[final_score]
+#     print(f"\nFinal score: {final_score}\n")
+#     parser.generate_temp_results(allocated_suites, f"output/{name}_suites.csv")
+#     return allocated_suites
+#
+#
+# def allocate_randomly(students, name):
+#     suite_allocation = SuiteAllocation(students, name)
+#     suite_allocation.allocate_randomly()
+#     global_score = suite_allocation.global_score()
+#     allocated_suites = suite_allocation.get_allocation()
+#     print(f"\nRandom allocation score: {global_score}\n")
+#     parser.generate_temp_results(allocated_suites, f"output/{name}_random.csv")
+#
+#
+# if __name__ == "__main__":
+#     main()

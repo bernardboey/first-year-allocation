@@ -36,23 +36,26 @@
             </table>
         </div>
         <div class="alert alert-info" role="alert">
-            Note: The following numbers exclude students that are allocated to gender neutral suites.
+            Note: The following numbers exclude students that are allocated to gender inclusive suites.
         </div>
         <p class="fw-bold mb-1">Total Students: {{ total_students }}</p>
         <p>
-            No. of Males: {{ num_males }}<br>
-            No. of Females: {{ num_females }}
+            No. of Males: {{ num_males }} ({{ num_a11y_males }} accessibility)<br>
+            No. of Females: {{ num_females }} ({{ num_a11y_females }} accessibility)
         </p>
         <p class="fw-bold mb-1">Total Suites Available: {{ total_suites }}</p>
         <p>
-            Saga: {{ avail_suites_saga }}<br>
-            Elm: {{ avail_suites_elm }}<br>
-            Cendana: {{ avail_suites_cendana }}
+            Saga sextets: {{ avail_sextets_saga }}<br>
+            Saga accessibility: {{ avail_a11y_suites_saga }}<br>
+            Elm sextets: {{ avail_sextets_elm }}<br>
+            Elm accessibility: {{ avail_a11y_suites_elm }}<br>
+            Cendana sextets: {{ avail_sextets_cendana }}<br>
+            Cendana accessibility: {{ avail_a11y_suites_cendana }}
         </p>
         <p class="fw-bold mb-1">Required Suites: {{ required_suites }} / {{ total_suites }}</p>
         <p>
-            Male suites: {{ required_suites_male }} ({{ num_males }} split into suites of 6)<br>
-            Female suites: {{ required_suites_female }} ({{ num_females }} split into suites of 6)<br>
+            Male suites: {{ required_suites_male }} ({{ required_a11y_suites_male }} accessibility)<br>
+            Female suites: {{ required_suites_female }} ({{ required_a11y_suites_female }} accessibility)<br>
         </p>
         <hr class="mt-4 mb-3">
         <h5 class="mb-4">The first-years will be allocated based on demographics (country and school) and
