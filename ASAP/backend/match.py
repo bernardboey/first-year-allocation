@@ -104,6 +104,12 @@ class SuiteRound:
         return self.students
 
 
+def suites_with_fewer_rcs_first(suite):
+    if suite.current_choice:
+        return min(len(suite.data.allowable_rcs), len(suite.current_choice.data.allowable_rcs))
+    return len(suite.data.allowable_rcs)
+
+
 class RCAMatch:
     def __init__(self, female_suites, male_suites, saga_sextets, elm_sextets, cendana_sextets,
                  saga_a11y_suites, elm_a11y_suites, cendana_a11y_suites,
@@ -152,6 +158,7 @@ class RCAMatch:
         gale_shapley(self.proposers)
         suites = self.female_suites if len(self.female_suites) > len(self.male_suites) else self.male_suites
         random.shuffle(suites)
+        suites.sort(key=suites_with_fewer_rcs_first)
         i = 1
         for suite in suites:
             if not suite.current_choice:
@@ -176,6 +183,7 @@ class RCAMatch:
         # If there are accessibility suites with non-predefined RCs, and they get their RC first before
         # suites with predefined RCs, then we have a problem because the earlier suite might steal the RC
         # that the second suite needs.
+        # TODO: Actually this might be resolved? With suites.sort(key=suites_with_fewer_rcs_first)
 
         saga_can = "Saga" in allowable_rcs
         elm_can = "Elm" in allowable_rcs

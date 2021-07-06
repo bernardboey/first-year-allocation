@@ -76,10 +76,15 @@ def select_column_type():
                 selected_values[f"column{i}"] = _type.desc
 
         # TEMPORARILY HERE TO SPEED UP DEVELOPMENT #
-        for i, _type in enumerate((asap_obj.ID, asap_obj.OTHERS, asap_obj.SEX, asap_obj.SCHOOL, asap_obj.COUNTRY,
-                                   asap_obj.ACCESSIBILITY, asap_obj.AVAILABLE_RCS, asap_obj.OTHERS,
-                                   asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF,
-                                   asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF)):
+        # for i, _type in enumerate((asap_obj.ID, asap_obj.OTHERS, asap_obj.SEX, asap_obj.SCHOOL, asap_obj.COUNTRY,
+        #                            asap_obj.ACCESSIBILITY, asap_obj.AVAILABLE_RCS, asap_obj.OTHERS,
+        #                            asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF,
+        #                            asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF)):
+        #     selected_values[f"column{i}"] = _type.desc
+        for i, _type in enumerate((asap_obj.ID, asap_obj.SCHOOL, asap_obj.OTHERS, asap_obj.SEX, asap_obj.LIVING_PREF,
+                                   asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.OTHERS,
+                                   asap_obj.ACCESSIBILITY, asap_obj.AVAILABLE_RCS, asap_obj.OTHERS, asap_obj.COUNTRY,
+                                   asap_obj.LIVING_PREF, asap_obj.LIVING_PREF, asap_obj.OTHERS)):
             selected_values[f"column{i}"] = _type.desc
         # END OF BLOCK #
     return render_template('select_column_type.html',
@@ -98,6 +103,10 @@ def verify_living_preferences():
     asap_obj = restore_pickle()
     colnames, unique_values, _ = asap_obj.get_colnames_and_unique_values()
     unique_values = [sorted(values) for col, values in zip(colnames, unique_values) if col in asap_obj.LIVING_PREF.cols]
+    # Temporarily here to speed up development #
+    order_list = [[3, 0, 1, 2], [3, 0, 1, 2], [2, 0, 3, 1], [0, 1, 3, 2], [0, 1], [0, 1]]
+    unique_values = [[unique_values[i][j] for j in order] for i, order in enumerate(order_list)]
+    # End of block #
     if asap_obj.living_pref_order_defined:
         unique_values = asap_obj.LIVING_PREF.selected_order
     if request.method == 'POST':
@@ -123,6 +132,10 @@ def select_weights():
         weights = asap_obj.LIVING_PREF.weights
     else:
         weights = {col: 100 // len(asap_obj.LIVING_PREF.cols) for i, col in enumerate(asap_obj.LIVING_PREF.cols)}
+        # Temporarily here #
+        _weights = [10, 10, 10, 30, 10, 30]
+        weights = {col: weight for col, weight in zip(asap_obj.LIVING_PREF.cols, _weights)}
+        # End of block #
     if request.method == 'POST':
         weights = {col: int(request.form[f"column{i}"]) for i, col in enumerate(asap_obj.LIVING_PREF.cols)}
         try:
@@ -150,8 +163,8 @@ def select_options():
         elm_a11y_suites = asap_obj.avail_a11y_suites_elm
         cendana_a11y_suites = asap_obj.avail_a11y_suites_cendana
     else:
-        saga_sextets, elm_sextets, cendana_sextets = 14, 14, 14
-        saga_a11y_suites, elm_a11y_suites, cendana_a11y_suites = 0, 0, 0
+        saga_sextets, elm_sextets, cendana_sextets = 12, 14, 13  # Usually 14, 14, 14
+        saga_a11y_suites, elm_a11y_suites, cendana_a11y_suites = 1, 0, 1  # Usually 0, 0, 0
     if request.method == 'POST':
         saga_sextets = int(request.form["saga-sextets"])
         elm_sextets = int(request.form["elm-sextets"])

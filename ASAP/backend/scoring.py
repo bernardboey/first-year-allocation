@@ -3,6 +3,13 @@ import itertools
 
 from ASAP.backend.student import Citizenship
 
+SOUTH_ASIAN_COUNTRIES = {"India", "Pakistan", "Sri Lanka", "Bangladesh", "Nepal"}
+ASIAN_COUNTRIES = {"Philippines", "Pakistan", "India", "Indonesia", "Japan", "China", "Taiwan", "Malaysia", "Thailand",
+                   "Hong Kong", "South Korea", "Vietnam", "Bhutan", "Macau"}
+NON_ASIAN_COUNTRIES = {"Ethiopia", "Kenya", "Tanzania", "Rwanda", "Cote D'Ivoire", "United States", "Canada", "Brazil",
+                       "Paraguay", "New Zealand", "Germany", "Austria", "Netherlands", "Azerbaijan", "Sweden",
+                       "United Kingdom", "Turkey", "Poland", "Mongolia", "Jordan"}
+
 
 def calculate_score(suite, student):
     """
@@ -24,7 +31,7 @@ def calculate_score(suite, student):
     duplicate_overseas_countries_score = len(overseas_countries) - len(set(overseas_countries)) * 120
 
     schools = [student.data.school for student in students]
-    duplicate_schools_score = len(schools) - len(set(schools)) * 100
+    duplicate_schools_score = len(schools) - len(set(schools)) * 120
 
     score = living_pref_scores(students)
 
@@ -58,6 +65,23 @@ def calculate_score(suite, student):
     else:
         score += 2000
 
+    # TEMPORARY FIXES FOR 2021 ALLOCATION (CLASS OF 2025) #
+    # Prevent South Asian countries from being in the same suite
+    if len(SOUTH_ASIAN_COUNTRIES.intersection(set(overseas_countries))) > 1:
+        score += 2000
+
+    # Prevent non-asian countries from being in the same suite
+    if len(NON_ASIAN_COUNTRIES.intersection(set(overseas_countries))) > 1:
+        score += 2000
+
+    # Prevent duplicate countries
+    if len(overseas_countries) - len(set(overseas_countries)) > 0:
+        score += 2000
+
+    # Prevent duplicate schools
+    if len(schools) - len(set(schools)) > 0:
+        score += 2000
+
     return score
 
 
@@ -89,10 +113,26 @@ def rca_demographic_scores(suite1, suite2):
     schools = ([student.data.school for student in suite1.students]
                + [student.data.school for student in suite2.students])
     school_diversity = len(schools) - len(set(schools)) / 3
-    return 0.4 * citizenship_diversity + 0.3 * country_diversity + 0.3 * school_diversity
+
+    score = 0.4 * citizenship_diversity + 0.3 * country_diversity + 0.3 * school_diversity
+
+    # Prevent 3 : 2 + 4 : 2 and 4 : 2 + 4 : 2 ratio
+    if (num_locals == 7 and num_intls == 4) or (num_locals == 8 and num_intls == 4):
+        score += 2000
+
+    # TEMPORARY FIXES FOR 2021 ALLOCATION (CLASS OF 2025) #
+    # Prevent South Asian countries from being in the same RCA
+    if len(SOUTH_ASIAN_COUNTRIES.intersection(set(overseas_countries))) > 1:
+        score += 2000
+    # Make sure RCA groupings have one student from China, to prevent leftover female suites from having too many
+    # students from China
+    if "China" not in overseas_countries:
+        score += 2000
+
+    return score
 
 
-def calculate_rca_score(suite1, suite2, demographic_weight=0.4):
+def calculate_rca_score(suite1, suite2, demographic_weight=0.8):
     # sleep_prefs = abs(sum(student.sleep_pref for student in suite1.students) / len(suite1.students)
     #                   - sum(student.sleep_pref for student in suite2.students) / len(suite2.students))
     # suite_prefs = abs(sum(student.suite_pref for student in suite1.students) / len(suite1.students)
