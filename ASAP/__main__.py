@@ -366,13 +366,16 @@ class ASAP:
 
     def run_allocation(self):
         female_students, male_students = self.add_students()
-        # DONE up till here
         self.female_suites = self.allocate_suites(female_students, "Female", self.num_a11y_females)
         self.male_suites = self.allocate_suites(male_students, "Male", self.num_a11y_males)
+        # DONE up till here
         rca_match = match.RCAMatch(self.female_suites, self.male_suites,
-                                   saga=self.avail_sextets_saga,
-                                   elm=self.avail_sextets_elm,
-                                   cendana=self.avail_sextets_cendana)
+                                   saga_sextets=self.avail_sextets_saga,
+                                   elm_sextets=self.avail_sextets_elm,
+                                   cendana_sextets=self.avail_sextets_cendana,
+                                   saga_a11y_suites=self.avail_a11y_suites_saga,
+                                   elm_a11y_suites=self.avail_a11y_suites_elm,
+                                   cendana_a11y_suites=self.avail_a11y_suites_cendana)
         rca_match.run_match()
         self.suites = self.male_suites + self.female_suites
         self.calculate_statistics()

@@ -82,8 +82,9 @@ class SuiteRound:
             student.current_choice = suite
             suite.add_student(student)
 
-            # This relies on the fact that accessibility suites are placed in front of the suite list, and accessibility
-            # students are also placed in front of the suite list, and 1 accessibility student per accessibility suite
+            # This relies on the fact that accessibility suites are placed in front of the suite list, and local
+            # accessibility students are also placed in front of the suite list, and 1 accessibility student per
+            # accessibility suite
             if student.data.accessibility:
                 assert suite.data.accessibility
         return students
@@ -104,15 +105,21 @@ class SuiteRound:
 
 
 class RCAMatch:
-    def __init__(self, female_suites, male_suites, saga, elm, cendana, female_suites_propose=True):
+    def __init__(self, female_suites, male_suites, saga_sextets, elm_sextets, cendana_sextets,
+                 saga_a11y_suites, elm_a11y_suites, cendana_a11y_suites,
+                 female_suites_propose=True):
         self.female_suites = [RCAMatch.Matchee(suite) for suite in female_suites]
         self.male_suites = [RCAMatch.Matchee(suite) for suite in male_suites]
         self.female_suites_propose = female_suites_propose
         self.proposers = None
-        self.saga = saga
-        self.elm = elm
-        self.cendana = cendana
-        if saga + elm + cendana < len(self.female_suites) + len(self.male_suites):
+        self.saga_sextets = saga_sextets
+        self.elm_sextets = elm_sextets
+        self.cendana_sextets = cendana_sextets
+        self.saga_a11y_suites = saga_a11y_suites
+        self.elm_a11y_suites = elm_a11y_suites
+        self.cendana_a11y_suites = cendana_a11y_suites
+        if (saga_sextets + elm_sextets + cendana_sextets + saga_a11y_suites + elm_a11y_suites + cendana_a11y_suites
+                < len(self.female_suites) + len(self.male_suites)):
             raise ValueError("Not enough suites.")
 
     class Matchee:
@@ -151,28 +158,61 @@ class RCAMatch:
                 suite.data.rca = "Unallocated"
                 suite.data.rc = "Unallocated"
             else:
-                rc = self.get_rc()
+                rc = self.get_rc(suite.data, suite.current_choice.data)
                 suite.data.rc = rc
                 suite.current_choice.data.rc = rc
                 suite.current_choice.data.rca = f"RCA {i:02d}"
                 suite.data.rca = f"RCA {i:02d}"
                 i += 1
 
-    def get_rc(self):
-        i = random.randint(1, 3)
-        if i == 1:
-            if self.saga >= 2:
-                self.saga -= 2
-                return "Saga"
-        elif i == 2:
-            if self.elm >= 2:
-                self.elm -= 2
-                return "Elm"
-        elif i == 3:
-            if self.cendana >= 2:
-                self.cendana -= 2
-                return "Cendana"
-        return self.get_rc()
+    def get_rc(self, first_suite, second_suite):
+        allowable_rcs = first_suite.allowable_rcs.intersection(second_suite.allowable_rcs)
+        if not allowable_rcs:
+            raise RuntimeError("No common RCs between two suites")
+
+        # TODO: Quick hack - there will never be two accessibility suites in the same RCA group
+
+        # TODO: This also assumes that ALL accessibility suites will have their RCs pre-defined
+        # If there are accessibility suites with non-predefined RCs, and they get their RC first before
+        # suites with predefined RCs, then we have a problem because the earlier suite might steal the RC
+        # that the second suite needs.
+
+        saga_can = "Saga" in allowable_rcs
+        elm_can = "Elm" in allowable_rcs
+        cendana_can = "Cendana" in allowable_rcs
+
+        if first_suite.accessibility or second_suite.accessibility:
+            i = random.randint(1, 3)
+            if i == 1:
+                if self.saga_sextets >= 1 and self.saga_a11y_suites >= 1 and saga_can:
+                    self.saga_sextets -= 1
+                    self.saga_a11y_suites -= 1
+                    return "Saga"
+            elif i == 2:
+                if self.elm_sextets >= 1 and self.elm_a11y_suites >= 1 and elm_can:
+                    self.elm_sextets -= 1
+                    self.elm_a11y_suites -= 1
+                    return "Elm"
+            elif i == 3:
+                if self.cendana_sextets >= 1 and self.cendana_a11y_suites >= 1 and cendana_can:
+                    self.cendana_sextets -= 1
+                    self.cendana_a11y_suites -= 1
+                    return "Cendana"
+        else:
+            i = random.randint(1, 3)
+            if i == 1:
+                if self.saga_sextets >= 2 and saga_can:
+                    self.saga_sextets -= 2
+                    return "Saga"
+            elif i == 2:
+                if self.elm_sextets >= 2 and elm_can:
+                    self.elm_sextets -= 2
+                    return "Elm"
+            elif i == 3:
+                if self.cendana_sextets >= 2 and cendana_can:
+                    self.cendana_sextets -= 2
+                    return "Cendana"
+        return self.get_rc(first_suite, second_suite)
 
 
 def gale_shapley(proposers):

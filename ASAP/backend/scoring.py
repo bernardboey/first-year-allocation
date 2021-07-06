@@ -105,6 +105,12 @@ def calculate_rca_score(suite1, suite2, demographic_weight=0.4):
     pref_score = living_pref_scores(suite1.students + suite2.students)
     demographic_score = rca_demographic_scores(suite1, suite2)
     score = demographic_weight * demographic_score + (1 - demographic_weight) * pref_score
+
+    # Check allowable RCs
+    allowable_rcs = suite1.allowable_rcs.intersection(suite2.allowable_rcs)
+    if not allowable_rcs:
+        score += 2000
+
     return score
 
 
