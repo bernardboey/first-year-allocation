@@ -5,6 +5,16 @@ from ASAP.backend.student import Citizenship
 
 
 def calculate_score(suite, student):
+    """
+    Lower score is better
+
+    Args:
+        suite: SuiteAllocation.SuiteData
+        student: SuiteRound.StudentMatchee
+
+    Returns:
+
+    """
     if student is None:
         students = suite.students
     else:
@@ -27,9 +37,27 @@ def calculate_score(suite, student):
     # score = 0.2 * sleep_prefs + 0.4 * suite_prefs + 0.2 * cleanliness_prefs + 0.2 * alcohol_prefs
     score += duplicate_overseas_countries_score + duplicate_schools_score
 
+    # Prevent 4 : 1 ratio as much as possible for non-accessibility suites
     citizenships = [student.data.citizenship for student in students]
     if citizenships.count(Citizenship.LOCAL) == 4 and citizenships.count(Citizenship.INTERNATIONAL) == 2:
         score -= 1000
+
+    # Prevent 4 : 1 ratio or 3 intl : 2 local ratio for accessibility
+    if ((suite.accessibility or student.data.accessibility) and citizenships.count(Citizenship.LOCAL) == 3
+            and citizenships.count(Citizenship.INTERNATIONAL) == 1):
+        score -= 2000
+
+    # Prevent more than one accessibility student fom being allocated to the same suite
+    if student.data.accessibility and suite.accessibility:
+        score += 2000
+
+    # Check allowable RCs
+    for rc in student.data.available_rcs:
+        if rc in suite.allowable_rcs:
+            break
+    else:
+        score += 2000
+
     return score
 
 

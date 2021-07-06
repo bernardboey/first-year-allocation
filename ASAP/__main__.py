@@ -280,6 +280,23 @@ class ASAP:
 
     def set_options(self, saga_sextets, elm_sextets, cendana_sextets, saga_a11y_suites, elm_a11y_suites,
                     cendana_a11y_suites):
+        """
+        Assumptions about accessibility students and suites:
+        - 1 accessibility student per 1 accessibility suite.
+        - Extra accessibility suites (beyond what is required for accessibility students) WILL NOT be used.
+          Sextets are required instead.
+
+        Args:
+            saga_sextets:
+            elm_sextets:
+            cendana_sextets:
+            saga_a11y_suites:
+            elm_a11y_suites:
+            cendana_a11y_suites:
+
+        Returns:
+
+        """
         if not self.weights_defined:
             raise ValueError("self.set_weights(weights) MUST be called first")
 
@@ -301,8 +318,10 @@ class ASAP:
                                   + self.avail_a11y_suites_cendana)
         self.total_suites = self.total_sextets + self.total_a11y_suites
 
-        self.required_a11y_suites_male = ((self.num_a11y_males - 1) // 5) + 1
-        self.required_a11y_suites_female = ((self.num_a11y_females - 1) // 5) + 1
+        # self.required_a11y_suites_male = ((self.num_a11y_males - 1) // 5) + 1
+        # self.required_a11y_suites_female = ((self.num_a11y_females - 1) // 5) + 1
+        self.required_a11y_suites_male = self.num_a11y_males
+        self.required_a11y_suites_female = self.num_a11y_females
         self.required_a11y_suites = self.required_a11y_suites_male + self.required_a11y_suites_female
         if self.total_a11y_suites < self.required_a11y_suites:
             raise ValueError(f"Not enough accessibility suites. {self.required_a11y_suites} accessibility suites are "
@@ -347,8 +366,9 @@ class ASAP:
 
     def run_allocation(self):
         female_students, male_students = self.add_students()
-        self.female_suites = self.allocate_suites(female_students, "Female")
-        self.male_suites = self.allocate_suites(male_students, "Male")
+        # DONE up till here
+        self.female_suites = self.allocate_suites(female_students, "Female", self.num_a11y_females)
+        self.male_suites = self.allocate_suites(male_students, "Male", self.num_a11y_males)
         rca_match = match.RCAMatch(self.female_suites, self.male_suites,
                                    saga=self.avail_sextets_saga,
                                    elm=self.avail_sextets_elm,
@@ -383,7 +403,9 @@ class ASAP:
                                       country=[self.students_df.loc[i, col] for col in self.COUNTRY.cols if col],
                                       living_prefs={col: self.LIVING_PREF.text_to_num[j][self.students_df.loc[i, col]]
                                                     for j, col in enumerate(self.LIVING_PREF.cols)},
-                                      others={col: self.students_df.loc[i, col] for col in self.OTHERS.cols})
+                                      others={col: self.students_df.loc[i, col] for col in self.OTHERS.cols},
+                                      available_rcs=self.students_df.loc[i, self.AVAILABLE_RCS.col].split(", "),
+                                      accessibility=self.students_df.loc[i, self.ACCESSIBILITY.col] == "Yes")
             sex = self.students_df.loc[i, self.SEX.col]
             if sex == "F":
                 female_students.append(new_student)
@@ -404,11 +426,10 @@ class ASAP:
             self.male_stats[suite.rc] = (len(suite.students) + num_students, 1 + num_suites)
         self.datetime = datetime.datetime.now().strftime("%d %b %Y %H:%M")
 
-    def allocate_suites(self, students, name):
+    def allocate_suites(self, students, name, num_a11y_students):
         allocations = {}
         for i in range(100):
-            # TODO: Add number of accessibility suites here
-            suite_allocation = SuiteAllocation(students, name)
+            suite_allocation = SuiteAllocation(students, name, num_a11y_students)
             suite_allocation.match()
             global_score = suite_allocation.global_score()
             allocated_suites = suite_allocation.get_allocation()
