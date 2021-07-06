@@ -35,13 +35,16 @@ class StudentData:
         citizenship: An Citizenship enumeration representing whether a student is LOCAL or INTERNATIONAL
     """
 
-    def __init__(self, *, index, matric, sex, country, school, living_prefs, others):
+    def __init__(self, *, index, matric, sex, country, school, living_prefs, others, available_rcs,
+                 accessibility=False):
         """Initialises a StudentData object"""
         self.index = index
         self.matric = matric
         self.sex = Sex(sex)
         self.school = school
         self.country: List[str] = country
+        self.available_rcs: List[str] = available_rcs
+        self.accessibility: bool = accessibility
         self.living_prefs: Dict[str, int] = living_prefs
         self.others: Dict[str, Any] = others
         self.citizenship = Citizenship.LOCAL if "Singapore" in self.country else Citizenship.INTERNATIONAL
@@ -57,5 +60,7 @@ class StudentData:
 
         Use this to print information about a student, when the string representation of the object is not sufficient.
         """
-        attributes = str([self.sex, self.country, self.citizenship, self.school, self.living_prefs, self.others])
+        attributes = str([self.sex, self.country, self.citizenship, self.school,
+                          "Accessibility" if self.accessibility else "Non-accessibility",
+                          self.available_rcs, self.living_prefs, self.others])
         return f"{self.matric}: {attributes}"

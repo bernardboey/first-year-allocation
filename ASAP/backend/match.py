@@ -2,6 +2,7 @@ import collections
 import random
 
 from ASAP.backend import scoring
+from ASAP.backend.allocation import SuiteAllocation
 from ASAP.backend.student import StudentData
 
 
@@ -45,7 +46,7 @@ class SuiteRound:
             self.ranking = collections.deque(sorted(suites, key=self.generate_score))
 
     class SuiteMatchee:
-        def __init__(self, suite):
+        def __init__(self, suite: SuiteAllocation.SuiteData):
             self.data = suite
             self.scores = {}
             self.ranking = None
@@ -80,6 +81,11 @@ class SuiteRound:
             suite = suites[i]
             student.current_choice = suite
             suite.add_student(student)
+
+            # This relies on the fact that accessibility suites are placed in front of the suite list, and accessibility
+            # students are also placed in front of the suite list, and 1 accessibility student per accessibility suite
+            if student.data.accessibility:
+                assert suite.data.accessibility
         return students
 
     def run_match(self):
@@ -108,7 +114,6 @@ class RCAMatch:
         self.cendana = cendana
         if saga + elm + cendana < len(self.female_suites) + len(self.male_suites):
             raise ValueError("Not enough suites.")
-
 
     class Matchee:
         def __init__(self, suite):
